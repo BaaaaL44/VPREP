@@ -1,0 +1,995 @@
+---
+title: "`r params$subj` Írásbeli Érettségi Vizsga Eredményei"
+author: "Tóth Bálint"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: false
+    toc_depth: 4
+    df_print: tibble
+  pdf_document: default
+  word_document: default
+params:
+  year: 2022
+  season: ősz
+  centrum: BGSZC
+  school: Vásárhelyi Pál Technikum
+  level: közép
+  subj: Angol
+
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knit_engines$set(asis = function(options) {
+  if (options$echo && options$eval) knit_child(text = options$code)
+})
+knitr::opts_chunk$set(fig.align = 'center', out.width = '80%', echo = TRUE)
+```
+
+
+
+```{r warning = FALSE, message = FALSE, echo = FALSE}
+library(readxl)
+library(ggplot2)   
+library(car)      
+library(huxtable)
+library(dplyr)
+library(knitr)
+library(ape)
+library(kableExtra)
+library(plotly)
+library(broom)
+library(rstatix)
+library(corrplot)
+library(matrixcalc)
+library(shiny)
+library(tidyverse)
+library(fmsb)
+library(ggradar)
+library(ggiraphExtra)
+library(psych)
+```
+
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+if (params$subj %in% c("Angol", "Német")){
+
+fulldata = read_excel('angol2.xlsx')
+fulldata = fulldata %>% mutate(Olvasott_százalék = (Olvasott/33)*100, Hallott_százalék = (Hallott/33)*100, Írás_százalék = (Írás/33)*100, Nyelv_százalék = (Nyelv/18)*100, Százalék_teljes = (Össz/150*100), Írásbeli_százalék = (Írásbeli/117)*100, Szóbeli_százalék = (Szóbeli/33)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata$Osztály = as.factor(fulldata$Osztály)
+fulldata$Nem = as.factor(fulldata$Nem)
+fulldata$Tanár = as.factor(fulldata$Tanár)
+fulldata$Státusz = factor(fulldata$Státusz, levels = c("Érvénytelen", "Kettesért szóbelizik", "Írásbelin átment"))
+fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "Közepes", "Jó", "Jeles"))
+}
+
+if (params$subj == "Logisztika"){
+  
+fulldata = read_excel('logisztika.xlsx')
+fulldata = fulldata %>% mutate(Teszt_százalék = (Teszt/40)*100, Hosszú_százalék = (Hosszú/60)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 & Szóbeli_százalék >= 12 ~ "Írásbelin átment" ), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata$Osztály = as.factor(fulldata$Osztály)
+fulldata$Nem = as.factor(fulldata$Nem)
+fulldata$Tanár = as.factor(fulldata$Tanár)
+fulldata$Státusz = factor(fulldata$Státusz, levels = c("Érvénytelen", "Kettesért szóbelizik", "Írásbelin átment"))
+fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "Közepes", "Jó", "Jeles"))
+}
+
+if (params$subj == "Történelem"){
+  
+fulldata = read_excel('történelem.xlsx')
+fulldata = fulldata %>% mutate(Teszt_százalék = (Teszt/50)*100, Hosszú_százalék = (Hosszú/50)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata$Osztály = as.factor(fulldata$Osztály)
+fulldata$Nem = as.factor(fulldata$Nem)
+fulldata$Tanár = as.factor(fulldata$Tanár)
+fulldata$Státusz = factor(fulldata$Státusz, levels = c("Érvénytelen", "Kettesért szóbelizik", "Írásbelin átment"))
+fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "Közepes", "Jó", "Jeles"))  
+}
+
+if (params$subj == "Matematika"){
+  
+fulldata = read_excel('matek.xlsx')
+fulldata = fulldata %>% mutate(Szóbelizett = as.numeric(!is.na(Szóbeli)))
+fulldata = fulldata %>% mutate(Rövid_százalék = (Rövid/30)*100, Hosszú_A_százalék = (Hosszú_A/36)*100, Hosszú_B_százalék = (Hosszú_B/34)*100, Írásbeli_százalék = (Írásbeli/100)*100, Szóbeli_százalék = (Szóbeli/50)*100, Százalék_teljes = ifelse(Szóbelizett == 1, (Össz/150)*100, (Össz/100)*100), Státusz = case_when(Írásbeli_százalék < 12 | (!is.na(Szóbeli) & Szóbeli_százalék < 12) ~"Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 25 ~ "Kettesért szóbelizik", Írásbeli >= 25 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata$Osztály = as.factor(fulldata$Osztály)
+fulldata$Nem = as.factor(fulldata$Nem)
+fulldata$Tanár = as.factor(fulldata$Tanár)
+fulldata$Státusz = factor(fulldata$Státusz, levels = c("Érvénytelen", "Kettesért szóbelizik", "Írásbelin átment"))
+fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "Közepes", "Jó", "Jeles"))  
+}
+
+if (params$subj == "Turisztika"){
+fulldata = read_excel('Turisztika.xlsx')
+fulldata = fulldata %>% mutate(Turizmusföldrajz_százalék = (Turizmusföldrajz/25)*100, Kultúrtörténet_százalék = (Kultúrtörténet/25)*100, Vendégfogadás_százalék = (Vendégfogadás/20)*100, Protokoll_százalék = (Protokoll/10)*100, Turizmus_rendszere_százalék = (Turizmus_rendszere/15)*100, Marketing_százalék = (Marketing/5)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata$Osztály = as.factor(fulldata$Osztály)
+fulldata$Nem = as.factor(fulldata$Nem)
+fulldata$Tanár = as.factor(fulldata$Tanár)
+fulldata$Státusz = factor(fulldata$Státusz, levels = c("Érvénytelen", "Kettesért szóbelizik", "Írásbelin átment"))
+fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "Közepes", "Jó", "Jeles"))  
+}
+
+if (params$subj == "Magyar"){
+fulldata = read_excel('magyar.xlsx')
+fulldata = fulldata %>% mutate(Szövegértés_százalék = (Szövegértés/40)*100, Érvelés_Gyak_százalék = (Érvelés_Gyak/10)*100, Műértelmezés_százalék = (Műértelmezés/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Szóbeli_százalék = (Szóbeli/50)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata$Osztály = as.factor(fulldata$Osztály)
+fulldata$Nem = as.factor(fulldata$Nem)
+fulldata$Tanár = as.factor(fulldata$Tanár)
+fulldata$Státusz = factor(fulldata$Státusz, levels = c("Érvénytelen", "Kettesért szóbelizik", "Írásbelin átment"))
+fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "Közepes", "Jó", "Jeles"))  
+}
+
+if (params$subj == "Kereskedelem"){
+fulldata = read_excel('Kereskedelem.xlsx')
+fulldata = fulldata %>% mutate(Pénztár_százalék = (Pénztár/25)*100, Szöveges_százalék = (Szöveges/30)*100, Számítás_százalék = (Számítás/45)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata$Osztály = as.factor(fulldata$Osztály)
+fulldata$Nem = as.factor(fulldata$Nem)
+fulldata$Tanár = as.factor(fulldata$Tanár)
+fulldata$Státusz = factor(fulldata$Státusz, levels = c("Érvénytelen", "Kettesért szóbelizik", "Írásbelin átment"))
+fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "Közepes", "Jó", "Jeles"))  
+}
+
+```
+
+## Bevezetés
+
+Az alábbi dokumentum a `r params$year` `r params$season`i `r params$level`szintű `r tolower(params$subj)` érettségi eredményeit mutatja be a `r params$centrum` `r params$school`ban.Először megvizsgáljuk a tanulók számának osztályonkénti, illetve nemenkénti eloszlását, ezt követően pedig adatvizualizációs eszközök, és leíró, valamint inferenciális statisztikai módszerek használatával vonunk le következtetéseket a tanulók teljesítményéről, képességeiről.Az elemzések során a tanulók osztályát, nemét, az őket tanító pedagógus nevét, illetve az írásbeli vizsgán mért részképességek (Olvasott szövegértés, Nyelvhelyesség, Hallott szövegértés, Íráskészség) nyers pontszámban és százalékban kifejezett értékét vettük figyelembe.A tanulók nevét, és egyéb adatait az intézmény mindenkori adatkezelési szabályzatának (GDPR) és eljárásrendjének megfelelően kezeltük.
+
+## Gyakorisági, Leíró statisztikai adatok
+
+### Gyakoriságok, eloszlások
+
+#### Gyakoriságok osztályonként
+
+Először vizsgáljuk meg az írásbeli érettségi vizsgát tevő tanulók eloszlását `r ifelse(length(levels(fulldata$Osztály)) > 1, "osztályonként, ", "")` `r ifelse(length(levels(fulldata$Osztály)) > 1 & length(levels(fulldata$Tanár)) == 1, "és", "")` nemenként `r ifelse(length(levels(fulldata$Tanár)) > 1, "és javító tanáronként", "")`:
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Osztály)) > 1}
+div(ggplotly(ggplot(data = fulldata, aes(x = Osztály, fill = Osztály, text = paste( "Tanulók száma:", ..count..))) + geom_bar() + scale_fill_brewer(palette = "BrBG") + ylab("Tanulók száma") + theme_dark(), tooltip = "text"), align = "center")
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+
+oszt_raw_freq = as.data.frame(fulldata %>% group_by(Osztály) %>% count(Osztály)) %>% mutate(Százalék = (n/sum(n))*100) %>% mutate_if(is.numeric, round,2)
+osztgyak = kable(oszt_raw_freq, col.names = c("Osztály", "Tanulók száma", "Százalék"))  %>% kable_styling(full_width = F, position = "center")
+
+osztgyak
+```
+
+```{asis, echo = length(levels(fulldata$Osztály)) > 2}
+A `r oszt_raw_freq[1,1]` osztályból `r oszt_raw_freq[1,2]` tanuló, a `r oszt_raw_freq[,1][2:(nrow(oszt_raw_freq)-1)]` és `r oszt_raw_freq[,1][nrow(oszt_raw_freq)]` osztályokból pedig rendre `r oszt_raw_freq[,2][2:(nrow(oszt_raw_freq)-1)]` és `r oszt_raw_freq[,2][nrow(oszt_raw_freq)]` tanuló vett részt az érettségi vizsgán.
+```
+```{asis, echo = length(levels(fulldata$Osztály)) == 1}
+A vizsgán csak a `r oszt_raw_freq[1,1]` osztály `r oszt_raw_freq[1,2]` tanulója vett részt
+```
+```{asis, echo = length(levels(fulldata$Osztály)) == 2}
+A `r oszt_raw_freq[1,1]` osztályból `r oszt_raw_freq[1,2]` tanuló, a `r oszt_raw_freq[2,1]` osztályból pedig `r oszt_raw_freq[2,2]` tanuló vett részt az érettségi vizsgán.
+```
+
+#### Gyakoriságok nemenként
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+div(ggplotly(ggplot(data = fulldata, aes(x = Nem, fill = Nem, text = paste(..count.., "tanuló"))) + geom_bar() + scale_fill_brewer(palette = "BrBG") + ylab("Tanulók száma") + theme_dark(), tooltip = "text"), align = "center")
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+nem_raw_freq = as.data.frame(fulldata %>% group_by(Nem) %>% count(Nem)) %>% mutate(Százalék = (n/sum(n))*100) %>% mutate_if(is.numeric, round,2)
+nemgyak = kable(nem_raw_freq, col.names = c("Nem", "Tanulók Száma", "Százalék")) %>% kable_styling(full_width = F, position = "center")
+nemgyak
+```
+
+A tanulók `r round(nem_raw_freq[1,2]/(nem_raw_freq[1,2]+nem_raw_freq[2,2])*100, digits = 2)`%-a (`r nem_raw_freq[1,2]` tanuló) fiú, `r round(nem_raw_freq[2,2]/(nem_raw_freq[1,2]+nem_raw_freq[2,2])*100, digits = 2)`%-a (`r nem_raw_freq[2,2]`tanuló) pedig lány.
+
+#### Gyakoriságok tanáronként
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 1}
+div(ggplotly(ggplot(data = fulldata, aes(x = Tanár, fill = Tanár, text = paste(..count.., "tanuló"))) + geom_bar() + scale_fill_brewer(palette = "BrBG") + ylab("Tanulók száma") + theme_dark(), tooltip = "text"), align = "center")
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+tan_raw_freq = as.data.frame(fulldata %>% group_by(Tanár) %>% count(Tanár)) %>% mutate(Százalék = (n/sum(n))*100) %>% mutate_if(is.numeric, round,2)
+tangyak = kable(tan_raw_freq, col.names = c("Tanár", "Tanulók száma", "Százalék")) %>% kable_styling(full_width = F, position = "center")
+tangyak
+```
+
+```{asis, echo = length(levels(fulldata$Tanár)) > 2}
+
+`r tan_raw_freq[1,1]` `r tan_raw_freq[1,2]` tanulót, `r tan_raw_freq[,1][2:(nrow(tan_raw_freq)-1)]` és `r tan_raw_freq[,1][nrow(tan_raw_freq)]` pedig rendre `r tan_raw_freq[,2][2:(nrow(tan_raw_freq)-1)]` és `r tan_raw_freq[,2][nrow(tan_raw_freq)]` tanulót érettségiztettek.
+```
+```{asis, echo = length(levels(fulldata$Tanár)) == 1}
+Az ideji évben egyedül `r tan_raw_freq[1,1]` érettségiztetett, összesen `r tan_raw_freq[1,2]` tanulót.
+```
+```{asis, echo = length(levels(fulldata$Tanár)) == 2}
+`r tan_raw_freq[1,1]` `r tan_raw_freq[1,2]` tanulót, `r tan_raw_freq[2,1]` pedig `r tan_raw_freq[2,2]` tanulót érettségiztetett.
+```
+
+#### Jegyek, eredmények gyakorisága
+
+Ebben a szekcióban megvizsgáljuk az érettségi eredmények gyakoriságát státusonként (Érvénytelen, Kettesért Szóbelizett, Írásbelin átment) valamint érdemjegyenként. 
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+
+eredmény_raw_freq = as.data.frame(fulldata %>% group_by(Státusz) %>% count(Státusz)) %>% mutate(Százalék = (n/sum(n))*100) %>% mutate_if(is.numeric, round,2)
+eredmény_gyak = kable(eredmény_raw_freq, col.names = c("Státusz", "Tanulók száma", "Százalék")) %>% kable_styling(full_width = F, position = "center")
+
+
+div(ggplotly(ggplot(data = fulldata, aes(x = Státusz, fill = Státusz, text = paste("Tanulók száma", ..count..))) + geom_bar() + scale_fill_brewer(palette = "BrBG") + ylab("Tanulók száma") + theme_dark(), tooltip = "text"), align = "center")
+
+eredmény_gyak
+```
+
+```{asis, echo = TRUE}
+ A vizsgája `r eredmény_raw_freq[1,2]` tanulónak lett érvénytelen, `r eredmény_raw_freq[2,2]` tanulónak volt szüksége szóbelire a ketteshez, `r eredmény_raw_freq[3,2]` tanuló pedig már az írásbeli vizsgán elérte az elégséges szintet
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+
+jegy_raw_freq = as.data.frame(fulldata %>% group_by(Jegy) %>% count(Jegy)) %>% mutate(Százalék = (n/sum(n))*100) %>% mutate_if(is.numeric, round,2)
+jegy_gyak = kable(jegy_raw_freq, col.names = c("Érdemjegy", "Tanulók száma", "Százalék")) %>% kable_styling(full_width = F, position = "center")
+
+div(ggplotly(ggplot(data = fulldata, aes(x = Jegy, fill = Jegy, text = paste("Tanulók száma", ..count..))) + geom_bar() + scale_fill_brewer(palette = "BrBG") + ylab("Tanulók száma") + theme_dark(), tooltip = "text"), align = "center")
+
+jegy_gyak
+```
+
+```{asis, echo = TRUE}
+ A vizsgán `r jegy_raw_freq[1,2]` tanuló szerzett elégtelen, `r jegy_raw_freq[2,2]` tanuló elégséges, `r jegy_raw_freq[3,2]` tanuló közepes, `r jegy_raw_freq[4,2]` jó, `r jegy_raw_freq[5,2]` pedig jeles osztályzatot
+```
+
+### Leíró statisztikai adatok (középértékek, szórási mutatók)
+
+A gyakorisági mutatók után vessünk egy pillantást az általunk vizsgált indikátorok leíró statisztikai jellemzőire. Az alábbi táblázatban a változók neve egyértelmű, N a mintaemelmszámot, a Min és a Max az előforduló legalacsonyabb illetve legmagasabb értéket, Med a mediánt, Q1 és Q3 az első és harmadik kvartilisek értékét, IQR az interkvartilis féltartományt, MAD a medián abszolút hibát, SD a szórást, SE a sztenderd hibát, CI pedig a (szimmetrikus) konfidenciatartományt jelöli. A második táblázatban osztályonként láthatjuk a három legjobb eredményt elérő tanulót, amit az azt követő vizualizáció grafikusan is megjelenít. Mivel az Y-tengelyen elhelyezett nevek a százalékos eredmény szerint vannak sorrendezve, osztályon belül a 3 legjobb tanuló közötti függőleges távolság indirekten az adott osztály variabilitását mutatja, a fektetett oszlopok hossza pedig a százalékot:
+
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+TIPS = c("A vizsgakomponens neve", "A mintaelemszám, ami alapján az értékek kiszámításra kerültek", "Legalacsonyabb mért érték", "Legmagasabb mért érték", "Medián, a sorba rendezett adatok középső eleme, páros mintaelemszám esetén a középső kettő számtani közepe", "Első kvartilis: Az érték, ami alá az adatok 25%-a esik", "Harmadik kvartilis: Az érték, ami fölé az adatok 25%-a esik", "Interkvartilis féltartomány: az első és harmadik kvartilis terjedelme", "Medián Abszolút Eltérés: szórási mutató, ami a szórásnál kevésbé érzékeny a szélsőértékekre. Értéke a mediántól való abszzolút eltérések mediánja", "Számtani, súlyozatlan átlag", "Szórás", "Sztenderd hiba: A minták átlagainak szórása a populációátlag körül", "Konfidenciatartomány")
+sumdata = fulldata %>% select(-one_of(c("Név", "Osztály", "Tanár", "Nem"))) %>% select(sort(current_vars())) %>% select(-Írásbeli)
+stats = get_summary_stats(sumdata)
+stats = stats %>%  mutate_if(is.numeric, round, 2)
+colnames(stats) = c("Változó", "N", "Min", "Max", "Med", "Q1", "Q3", "IQR", "MAD", "Átlag", "SD", "SE", "CI")
+colnames(stats) = text_spec(colnames(stats), "html", tooltip = TIPS)
+kable(stats, "html", escape = F, digits = 3) %>% kable_styling("striped")
+```
+
+## Legjobb összestített eredményt elérő tanulók osztályonként
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+bestdata = fulldata %>% select(Név, Osztály, Százalék_teljes)
+best = bestdata %>% group_by(Osztály) %>% arrange(desc(Százalék_teljes), .by_group = T) %>% top_n(3, wt = Százalék_teljes) %>% mutate_if(is.numeric, round, 2)
+kable(best, col.names = c("Név", "Osztály", "Elért százalék")) %>% kable_styling("striped") 
+```
+
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+plotdata = fulldata %>% select(Név, Osztály, Százalék_teljes)
+best = plotdata %>% group_by(Osztály) %>% arrange(desc(Százalék_teljes), .by_group = T) %>% top_n(3, wt = Százalék_teljes)
+ggplotly(ggplot(data = best, aes(x = reorder(Név,Százalék_teljes), y = Százalék_teljes, fill = reorder(Név, Százalék_teljes))) +geom_col() + labs(fill = "Tanuló") + theme(axis.title.y=element_blank()) + coord_flip() + facet_wrap(~ Osztály), height = 900, width = 900, tooltip = "Százalék_teljes")
+```
+
+## Részképességek közötti `r ifelse(ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2, "ismételt méréses varianciaanalízis", "páros t-próba")`, részképességek vizualizációja
+
+Először vizsgáljuk meg a vizsga komponenseinek leíró statisztikai adatait az alábbi táblázat és dobozdiagram segítségével. A diagram a részfeladatok közti különbségeket zemlélteti. A mediánok, illetve kvartilisek megjelenítéséhez az egérkurzort húzzuk az egyes dobozok fölé, az oldalsó jelmagyarázatra kattintva pedig eltűntethetünk egyes elemeket
+
+```{r warning = FALSE, message = FALSE, echo = FALSE}
+fulldata_long = fulldata %>% gather(key = "Feladat", value = "Százalék", colnames(select(fulldata, ends_with("százalék"), -Írásbeli_százalék))) %>% convert_as_factor(Név, Feladat)
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 1}
+rész_desc = fulldata_long %>% group_by(Feladat) %>% summarize(Átlag = mean(Százalék), Medián = median(Százalék), Szórás = sd(Százalék), MAD = mad(Százalék), Min = min(Százalék), Max = max(Százalék))
+kable(rész_desc, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 1}
+if(params$subj == "Turisztika"){
+box_rep = ggplot(data = fulldata_long, aes(x = Feladat, y = Százalék, fill = Feladat)) + geom_boxplot(lwd = 1) + coord_flip()
+div(ggplotly(box_rep), align = "center")
+} else{
+box_rep = ggplot(data = fulldata_long, aes(x = Feladat, y = Százalék, fill = Feladat)) + geom_boxplot(lwd = 1)  
+div(ggplotly(box_rep), align = "center")  
+}
+```
+
+### Hipotézisvizsgálat
+
+ Ebben a szekcióban `r ifelse(ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2, "ismételt méréses varianciaanalízis", "páros t-próba")` segítségével megvizsgáljuk, az írásbeli vizsga feladatainak részpontszámai között mutatkozik-e szignifikáns, tehát véletlenszinttől eltérő különbség.
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2}
+TIPS_aov = c("A vizsgált tényező neve", "Az F-statisztika kiszámításához használt első szabadsági fok (csoportok közötti)", "Az F-statisztika kiszámításához használt második szabadsági fok (Csoporton belüli)", "F-statisztika, matematikailag a csoportok közötti és a hibavariancia hányadosa", "p-érték, ha kisebb 0.05-nél, a csoportok közötti különbség statisztikailag szignifikánsnak tekinthető", "Általánosított éta-négyzet, skálafüggetlenül mutatja a csoportok közti eltérés mértékét")
+res.aov <- anova_test(data = fulldata_long, dv = Százalék, wid = Név, within = Feladat)
+eredmény= get_anova_table(res.aov)
+eredmény = eredmény[,-6]
+colnames(eredmény) = text_spec(c("Hatás", "DF1", "DF2", "F", "p", "hatásmérték"), "html", tooltip = TIPS_aov)
+kable(eredmény, "html", escape = F, digits = 3) %>% kable_styling("striped", position = "center")
+feladat_p = eredmény[5]
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) == 2}
+## Jelen állás szerint erre a részletre sosem lesz szükség, mert a szóbelivel nincs olyan vizsga, ahol csak 2 komponens van
+
+TIPS_t = c("Az első vizsgált csoport", "A második vizsgált csoport", "Az első csoport mintaelemszáma", "A második csoport mintaelemszáma", "t-statisztika, a két csoport átlaga közötti különbségnek a két csoport varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
+rep_pair = fulldata_long %>% pairwise_t_test(Százalék ~ Feladat, paired = TRUE, p.adjust.method = "holm")
+rep_pair = rep_pair[,2:ncol(rep_pair)]
+rep_pair = rep_pair[,1:ncol(rep_pair)-1]
+colnames(rep_pair) = text_spec(c("Mérés 1", "Mérés 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_t)
+kable(rep_pair, "html", escape = F, digits = 3) %>% kable_styling("striped", position = "center")
+feladat_p = as.numeric(rep_pair[7])
+```
+
+A`r ifelse(ncol(fulldata %>% select(ends_with("százalék"))) > 2, "z ismételt méréses varianciaanalízis", " páros t-próba")` eredménye `r ifelse(feladat_p > 0.05, "nem szignifikáns", "szignifikáns")` (p = `r as.numeric(feladat_p)`).
+
+```{asis, echo = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2 & feladat_p < 0.05}
+Mivel a varianciaanalízis eredménye szignifikáns, páronkénti t-próbákkal megállapíthatjuk, mely feladatok között mutatkozik konkrétan szignifikáns eltérés
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2 & as.numeric(feladat_p) < 0.05}
+TIPS_t2 = c("Az első vizsgált mérés", "A második vizsgált mérés", "Az első mérés mintaelemszáma", "A második mérés mintaelemszáma", "t-statisztika, a két csoport átlaga közötti különbségnek a két csoport varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
+rep_pair = fulldata_long %>% pairwise_t_test(Százalék ~ Feladat, paired = TRUE, p.adjust.method = "holm")
+rep_pair = rep_pair[,2:ncol(rep_pair)]
+rep_pair = rep_pair[,1:ncol(rep_pair)-1]
+colnames(rep_pair) = text_spec(c("Mérés 1", "Mérés 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_t2)
+kable(rep_pair, "html", escape = F, digits = 3) %>% kable_styling("striped", position = "center")
+```
+
+### Részfeladatok eredményeinek vizualizációja 
+
+```{asis, echo = params$subj %in% c("Angol", "Német")}
+Érdemes végül megtekinteni az alábbi interaktív grafikonokat.
+
+Az első grafikon 3 tengelye az olvasott szövegértés, hallott szövegértés és íráskészség feladatok százalékos eredményeire van vetítve, a pontok színe pedig a nyelvhelyesség függvényében változik. A grafikon szabadon forgatható, nagyítható, az egyes pontokra bökve a kurzorral pedig feltűnik a tanuló neve, és pontszámai. 
+
+A második grafikon az összesített írásbeli és szóbeli vizsgarészek közötti korrelációt szemlélteti egyszerű pontdiagramon, a harmadik pedig radardiagramon szemléleteti diákonként az eredményeket. 
+```
+
+```{asis, echo = params$subj == "Magyar"}
+Érdemes végül megtekinteni az alábbi interaktív grafikonokat.
+
+Az első grafikon 3 tengelye az olvasott szövegértés, gyakorlati szövegalkotás és műértelmezés feladatok százalékos eredményeire van vetítve, a pontok színe pedig a szóbeli eredmények függvényében változik. A grafikon szabadon forgatható, nagyítható, az egyes pontokra bökve a kurzorral pedig feltűnik a tanuló neve, és pontszámai. 
+
+A második grafikon az összesített írásbeli és szóbeli vizsgarészek közötti korrelációt szemlélteti egyszerű pontdiagramon.
+
+A harmadik vizualizáció radardiagramon szemlélteti a három írásbeli feladatrész és a szóbeli vizsga százalékos eredményeit diákonként, ezzel is segítve a tanulók profilozását. 
+```
+
+```{asis, echo = params$subj == "Matematika"}
+Érdemes végül megtekinteni az alábbi interaktív grafikonokat:
+
+Az első grafikon 3 tengelye a rövid feladatok, illetve a hosszú feladatok A és B részének eredményeire van vetítve. A grafikon szabadon forgatható, nagyítható, az egyes pontokra bökve a kurzorral pedig feltűnik a tanuló neve, és pontszámai. A pirossal jelölt tanulók írásbeli eredménye nem érte el az elégséges szintet, szóbeli vizsgát kellett tenniük.
+
+A második grafikon ugyanezen az elven alapul, viszont kizárólag a tanulók szóbeli vizsgázni kénytelen részhalmazát tartalmazza, a pontok színe pedig a szóbeli vizsgaeredményt mutatja.
+
+A harmadik grafikon tanulónként, radardiagramok segítségével szemlélteti a tanuló eredményprofilokat.Először a szóbeli vizsgára nem kötelezett tanulók grafikonjai jelennek meg névsorban, majd a szóbeli vizsgára kötelezettek, ugyancsak névsorban.
+```
+
+```{asis, echo = params$subj == "Turisztika"}
+Az alábbiakban a tanulók teljesítményét radardiagramokkal is szemléltetni fogjuk. A sokszögek csúcsai felelnek meg az egyes részfeladatoknak (TURF = Turizmusföldrajz, KULT = Kultúrtörténet, VEND = Vendégfogadás, PROT = Protokoll, TURR = Turizmus rendszere, MARK = Marketing), a sokszög színezett része, illetve csúcsainak távolsága a sokszög középpontjával a tanuló százalékos pontszámát jelöli, a színezett sokszög területe pedig az összteljesítménnyel egyenesen arányos.
+```
+
+```{asis, echo = params$subj == "Kereskedelem"}
+Érdemes végül megtekinteni az alábbi interaktív grafikonokat:
+
+Az első grafikon az írásbeli vizsga három komponensét (Pénztár, Szöveges, Számítás) ábrázolja egy három dimenziós pontdiagramon, ahol a pontok színe a szóbeli vizsgán elért eredményt mutatja.
+
+A második grafikon az írásbeli összpontszám és a szóbeli összpontszám közötti kapcsolatot szemlélteti két dimenzióban, lineáris trendvonal segítségével.
+
+Az utolsó szekcióban radardiagramok segítségével ábrázoljuk az egyes tanulók, a vizsga egyes komponensein elért eredményeit, a tanulók könnyebb profilozhatósága, eredményeik összevethetősége érdekében.
+```
+
+```{asis, echo = params$subj %in% c("Logisztika", "Történelem")}
+Érdemes végül megtekinteni az alábbi interaktív grafikonokat:
+
+Az első grafikon 3 tengelye a tesztfeladatok, a hosszabb, kifejtős feladatok és a szóbeli vizsga százalékos eredményeire van vetítve. A grafikon interaktív, a kurzorral az egyes pontokra mutatva megjelenik a tanuló neve, és pontszámai.
+
+A második grafikon Az írásbeli összpontszám és a szóbeli pontszám kapcsolatát jeleníti meg két dimenzióban, lineáris trendvonallal.
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj == "Turisztika"}
+radar = as.data.frame(fulldata %>% arrange(Név) %>% select(ends_with("százalék"), -Írásbeli_százalék))
+radar = rbind(NA, radar)
+radar = rbind(NA, radar)
+rownames(radar) = c("Max", "Min", as.vector(fulldata$Név))
+colnames(radar) = c("TURF", "KULT", "VEND", "PROT", "TURR", "MARK", "SZÓ")
+radar[1, ] = rep(100, ncol(radar))
+radar[2, ] = rep(0, ncol(radar))
+
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(radar), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+colors_repo <- c("#00AFBB", "#E7B800", "#FC4E07", "#FFFF00", "#808000", "#00FFFF", "#008080", "#000080", "#FF00FF", "#800080", "#F08080", "#E9967A", "#73c6b6", "#15c80c", "#939914", "#f5b041", "#16a085","#922b21", "#f4d03f", "#35cacf",  "#0fa316", "#921ba0",  "#cf1919","#8e44ad", "#112aa8", "#f4d03f", "#81a426", "#9caee1", "#873600", "#0b205d", "#17f509",  "#c0392b", "#bfc9ca", "#f5b7b1", "#283747")
+colorsvector = sample(colors_repo, length(fulldata$Név), replace = FALSE)
+titlesvector = as.vector(fulldata$Név)
+titlesvector = sort(titlesvector)
+
+op <- par(mar = c(2, 0, 2, 0))
+par(mfrow = c(1,2))
+
+for(i in 1:length(titlesvector)){
+  create_beautiful_radarchart(
+    data = radar[c(1,2, i+2), ], caxislabels = c(0, 25, 50, 75, 100),
+    color = colorsvector[i], title = titlesvector[i]
+    )
+}
+par(op)
+
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj %in% c("Angol", "Német")}
+div(plot_ly(data = fulldata, x = ~Olvasott_százalék, y = ~Hallott_százalék, z = ~Írás_százalék, type="scatter3d", mode="markers", color = ~ Nyelv_százalék, text = ~Név, width = 800, height = 800) %>% layout(
+    scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Olvasott Szövegértés (x)'),yaxis = list(range = c(0, 100), title = 'Hallott Szövegértés (y)'), zaxis = list(range = c(0,100), title = 'Íráskészség (z)'))), align = "center")
+
+
+második_plot_data = as.data.frame(fulldata %>% select(Írásbeli_százalék, Szóbeli_százalék, Név))
+lin = lm(data = második_plot_data, Szóbeli_százalék ~ Írásbeli_százalék)
+második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = 'Írásbeli és szóbeli eredmények korrelációja', plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
+yaxis = list(title = "Szóbeli pontszám"))
+
+div(második_plot, align = "center")
+
+radar = as.data.frame(fulldata %>% arrange(Név) %>% select(ends_with("százalék"), -Írásbeli_százalék))
+radar = rbind(NA, radar)
+radar = rbind(NA, radar)
+rownames(radar) = c("Max", "Min", as.vector(fulldata$Név))
+colnames(radar) = c("OLV", "HALL", "ÍRÁS", "NYELV", "SZÓ")
+radar[1, ] = rep(100, ncol(radar))
+radar[2, ] = rep(0, ncol(radar))
+
+
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(radar), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+colors_repo <- c("#00AFBB", "#E7B800", "#FC4E07", "#FFFF00", "#808000", "#00FFFF", "#008080", "#000080", "#FF00FF", "#800080", "#F08080", "#E9967A", "#73c6b6", "#15c80c", "#939914", "#f5b041", "#16a085","#922b21", "#f4d03f", "#35cacf",  "#0fa316", "#921ba0",  "#cf1919","#8e44ad", "#112aa8", "#f4d03f", "#81a426", "#9caee1", "#873600", "#0b205d", "#17f509",  "#c0392b", "#bfc9ca", "#f5b7b1", "#283747")
+colorsvector = sample(colors_repo, length(fulldata$Név), replace = TRUE)
+titlesvector = as.vector(fulldata$Név)
+titlesvector = sort(titlesvector)
+
+op <- par(mar = c(2, 0, 2, 0))
+par(mfrow = c(1,2))
+
+for(i in 1:length(titlesvector)){
+  create_beautiful_radarchart(
+    data = radar[c(1,2, i+2), ], caxislabels = c(0, 25, 50, 75, 100),
+    color = colorsvector[i], title = titlesvector[i]
+    )
+}
+par(op)
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj == "Matematika"}
+
+if (sum(!is.na(fulldata$Szóbeli)) > 0) {
+fulldata_color = fulldata %>% mutate(Szóbelizett = as.character(Szóbelizett), color = recode(Szóbelizett, '1'  = "red", '0' = "green"))
+div(plot_ly(data = fulldata_color, x = ~Hosszú_A_százalék, y = ~Hosszú_B_százalék, z = ~Rövid_százalék, marker = list(color = ~color), type="scatter3d", mode="markers", text = ~Név, width = 800, height = 800) %>% layout(
+    scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Hosszú A (x)'),yaxis = list(range = c(0,100), title = 'Hosszú B (y)'), zaxis = list(range = c(0,100), title = 'Rövid (z)'))), align = "center")
+
+szóbeli_data = fulldata %>% filter(!is.na(Szóbeli_százalék))
+div(plot_ly(data = szóbeli_data, x = ~Hosszú_A_százalék, y = ~Hosszú_B_százalék, z = ~Rövid_százalék,color = ~Szóbeli_százalék,  type="scatter3d", mode="markers", text = ~Név, width = 800, height = 800) %>% layout(
+    scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Hosszú A (x)'),yaxis = list(range = c(0,100), title = 'Hosszú B (y)'), zaxis = list(range = c(0,100), title = 'Rövid (z)'))), align = "center")
+
+radar = as.data.frame(fulldata %>% filter(is.na(Szóbeli_százalék)) %>% arrange(Név) %>% select(ends_with("százalék"), -c(Írásbeli_százalék, Szóbeli_százalék)))
+radar = rbind(NA, radar)
+radar = rbind(NA, radar)
+rownames(radar) = c("Max", "Min", as.vector(fulldata %>% filter(is.na(Szóbeli_százalék)))$Név)
+colnames(radar) = c("RÖVID", "HOSSZÚ_A", "HOSSZÚ_B")
+radar[1, ] = rep(100, ncol(radar))
+radar[2, ] = rep(0, ncol(radar))
+
+radar2 = as.data.frame(fulldata %>% filter(!is.na(Szóbeli_százalék)) %>% arrange(Név) %>% select(ends_with("százalék"), -Írásbeli_százalék))
+radar2 = rbind(NA, radar2)
+radar2 = rbind(NA, radar2)
+rownames(radar2) = c("Max", "Min", as.vector(fulldata%>% filter(!is.na(Szóbeli_százalék)))$Név)
+colnames(radar2) = c("RÖVID", "HOSSZÚ_A", "HOSSZÚ_B", "SZÓ")
+radar2[1, ] = rep(100, ncol(radar2))
+radar2[2, ] = rep(0, ncol(radar2))
+
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(data), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+colors_repo <- c("#00AFBB", "#E7B800", "#FC4E07", "#FFFF00", "#808000", "#00FFFF", "#008080", "#000080", "#FF00FF", "#800080", "#F08080", "#E9967A", "#73c6b6", "#15c80c", "#939914", "#f5b041", "#16a085","#922b21", "#f4d03f", "#35cacf",  "#0fa316", "#921ba0",  "#cf1919","#8e44ad", "#112aa8", "#f4d03f", "#81a426", "#9caee1", "#873600", "#0b205d", "#17f509",  "#c0392b", "#bfc9ca", "#f5b7b1", "#283747")
+
+colorsvector = sample(colors_repo, nrow(fulldata%>%filter(is.na(Szóbeli_százalék))), replace = TRUE)
+titlesvector = fulldata %>% filter(is.na(Szóbeli_százalék)) %>% select(Név)
+titlesvector = sort(as.matrix(titlesvector))
+
+colorsvector2 = sample(colors_repo, nrow(fulldata%>%filter(!is.na(Szóbeli_százalék))), replace = TRUE)
+titlesvector2 = as.vector(fulldata%>%filter(!is.na(Szóbeli_százalék)) %>% select(Név))
+titlesvector2 = sort(as.matrix(titlesvector2))
+
+op <- par(mar = c(2, 0, 2, 0))
+par(mfrow = c(1,2))
+
+for(i in 1:length(titlesvector)){
+  create_beautiful_radarchart(
+    data = radar[c(1,2, i+2), ], caxislabels = c(0, 25, 50, 75, 100),
+    color = colorsvector[i], title = titlesvector[i]
+    )
+}
+
+par(op)
+
+
+op <- par(mar = c(2, 0, 2, 0))
+par(mfrow = c(1,2))
+
+for(i in 1:length(titlesvector2)){
+  create_beautiful_radarchart(
+    data = radar2[c(1,2, i+2), ], caxislabels = c(0, 25, 50, 75, 100),
+    color = colorsvector2[i], title = titlesvector2[i]
+    )
+}
+par(op) 
+} else {
+ div(plot_ly(data = fulldata, x = ~Hosszú_A_százalék, y = ~Hosszú_B_százalék, z = ~Rövid_százalék, type="scatter3d", mode="markers", text = ~Név, width = 800, height = 800) %>% layout(
+    scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Hosszú A (x)'),yaxis = list(range = c(0,100), title = 'Hosszú B (y)'), zaxis = list(range = c(0,100), title = 'Rövid (z)'))), align = "center") 
+  
+radar = as.data.frame(fulldata %>% arrange(Név) %>% select(ends_with("százalék"), -Írásbeli_százalék, -Szóbeli_százalék))
+radar = rbind(NA, radar)
+radar = rbind(NA, radar)
+rownames(radar) = c("Max", "Min", as.vector(fulldata$Név))
+colnames(radar) = c("RÖVID", "HOSSZÚ_A", "HOSSZÚ_B")
+radar[1, ] = rep(100, ncol(radar))
+radar[2, ] = rep(0, ncol(radar))
+
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(radar), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+colors_repo <- c("#00AFBB", "#E7B800", "#FC4E07", "#FFFF00", "#808000", "#00FFFF", "#008080", "#000080", "#FF00FF", "#800080", "#F08080", "#E9967A", "#73c6b6", "#15c80c", "#939914", "#f5b041", "#16a085","#922b21", "#f4d03f", "#35cacf",  "#0fa316", "#921ba0",  "#cf1919","#8e44ad", "#112aa8", "#f4d03f", "#81a426", "#9caee1", "#873600", "#0b205d", "#17f509",  "#c0392b", "#bfc9ca", "#f5b7b1", "#283747")
+colorsvector = sample(colors_repo, length(fulldata$Név), replace = FALSE)
+titlesvector = as.vector(fulldata$Név)
+titlesvector = sort(titlesvector)
+
+op <- par(mar = c(2, 0, 2, 0))
+par(mfrow = c(1,2))
+
+for(i in 1:length(titlesvector)){
+  create_beautiful_radarchart(
+    data = radar[c(1, 2, i+2), ], caxislabels = c(0, 25, 50, 75, 100),
+    color = colorsvector[i], title = titlesvector[i]
+    )
+}
+par(op)
+}
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj == "Magyar"}
+div(plot_ly(data = fulldata, x = ~Szövegértés_százalék, y = ~Érvelés_Gyak_százalék, z = ~Műértelmezés_százalék, color = ~Szóbeli_százalék, type="scatter3d", mode="markers", text = ~Név, width = 800, height = 800) %>% layout(
+    scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Szövegértés (x)'),yaxis = list(range = c(0,100), title = 'Érvelés/Gyakorlati (y)'), zaxis = list(range = c(0,100), title = 'Műértelmezés (z)'))), align = "center")
+
+második_plot_data = as.data.frame(fulldata %>% select(Írásbeli_százalék, Szóbeli_százalék, Név))
+lin = lm(data = második_plot_data, Szóbeli_százalék ~ Írásbeli_százalék)
+második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = 'Írásbeli és szóbeli eredmények korrelációja', plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
+yaxis = list(title = "Szóbeli pontszám"))
+
+div(második_plot, align = "center")
+
+radar = as.data.frame(fulldata %>% arrange(Név) %>% select(ends_with("százalék"), -Írásbeli_százalék))
+radar = rbind(NA, radar)
+radar = rbind(NA, radar)
+rownames(radar) = c("Max", "Min", as.vector(fulldata$Név))
+colnames(radar) = c("SZÖV", "ÉRV", "MŰÉRT", "SZÓ")
+radar[1, ] = rep(100, ncol(radar))
+radar[2, ] = rep(0, ncol(radar))
+
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(radar), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+colors_repo <- c("#00AFBB", "#E7B800", "#FC4E07", "#FFFF00", "#808000", "#00FFFF", "#008080", "#000080", "#FF00FF", "#800080", "#F08080", "#E9967A", "#73c6b6", "#15c80c", "#939914", "#f5b041", "#16a085","#922b21", "#f4d03f", "#35cacf",  "#0fa316", "#921ba0",  "#cf1919","#8e44ad", "#112aa8", "#f4d03f", "#81a426", "#9caee1", "#873600", "#0b205d", "#17f509",  "#c0392b", "#bfc9ca", "#f5b7b1", "#283747")
+colorsvector = sample(colors_repo, length(fulldata$Név), replace = FALSE)
+titlesvector = as.vector(fulldata$Név)
+titlesvector = sort(titlesvector)
+
+op <- par(mar = c(2, 0, 2, 0))
+par(mfrow = c(1,2))
+
+for(i in 1:length(titlesvector)){
+  create_beautiful_radarchart(
+    data = radar[c(1, 2, i+2), ], caxislabels = c(0, 25, 50, 75, 100),
+    color = colorsvector[i], title = titlesvector[i]
+    )
+}
+par(op)
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj == "Kereskedelem"}
+div(plot_ly(data = fulldata, x = ~Pénztár_százalék, y = ~Szöveges_százalék, z = ~Számítás_százalék, color = ~Szóbeli_százalék, type="scatter3d", mode="markers", text = ~Név, width = 800, height = 800) %>% layout(
+    scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Pénztári (x)'),yaxis = list(range = c(0,100), title = 'Szöveges (y)'), zaxis = list(range = c(0,100), title = 'Számítás (z)'))), align = "center")
+
+
+második_plot_data = as.data.frame(fulldata %>% select(Írásbeli_százalék, Szóbeli_százalék, Név))
+lin = lm(data = második_plot_data, Szóbeli_százalék ~ Írásbeli_százalék)
+második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = 'Írásbeli és szóbeli eredmények korrelációja', plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
+yaxis = list(title = "Szóbeli pontszám"))
+
+div(második_plot, align = "center")
+
+
+radar = as.data.frame(fulldata %>% arrange(Név) %>% select(ends_with("százalék"), -Írásbeli_százalék))
+radar = rbind(NA, radar)
+radar = rbind(NA, radar)
+rownames(radar) = c("Max", "Min", as.vector(fulldata$Név))
+colnames(radar) = c("PÉNZ", "SZÖV", "SZÁM", "SZÓ")
+radar[1, ] = rep(100, ncol(radar))
+radar[2, ] = rep(0, ncol(radar))
+
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(radar), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+colors_repo <- c("#00AFBB", "#E7B800", "#FC4E07", "#FFFF00", "#808000", "#00FFFF", "#008080", "#000080", "#FF00FF", "#800080", "#F08080", "#E9967A", "#73c6b6", "#15c80c", "#939914", "#f5b041", "#16a085","#922b21", "#f4d03f", "#35cacf",  "#0fa316", "#921ba0",  "#cf1919","#8e44ad", "#112aa8", "#f4d03f", "#81a426", "#9caee1", "#873600", "#0b205d", "#17f509",  "#c0392b", "#bfc9ca", "#f5b7b1", "#283747")
+colorsvector = sample(colors_repo, length(fulldata$Név), replace = FALSE)
+titlesvector = as.vector(fulldata$Név)
+titlesvector = sort(titlesvector)
+
+op <- par(mar = c(2, 0, 2, 0))
+par(mfrow = c(1,2))
+
+for(i in 1:length(titlesvector)){
+  create_beautiful_radarchart(
+    data = radar[c(1, 2, i+2), ], caxislabels = c(0, 25, 50, 75, 100),
+    color = colorsvector[i], title = titlesvector[i]
+    )
+}
+
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj %in% c("Logisztika", "Történelem")}
+
+div(plot_ly(data = fulldata, x = ~Teszt_százalék, y = ~Hosszú_százalék, z = ~Szóbeli_százalék, type="scatter3d", mode="markers", text = ~Név, width = 800, height = 800) %>% layout(
+    scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Tesztfeladat százalék (x)'),yaxis = list(range = c(0,100), title = 'Kifejtős feladat százalék (y)'), zaxis = list(range = c(0,100), title = 'Szóbeli százalék (z)'))), align = "center")
+
+
+
+második_plot = ggplotly(ggplot(fulldata, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = '\n\nÍrásbeli és szóbeli eredmények korrelációja', plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
+yaxis = list(title = "Szóbeli pontszám"))
+
+div(második_plot, align = "center")
+
+
+radar = as.data.frame(fulldata %>% arrange(Név) %>% select(ends_with("százalék"), -Írásbeli_százalék))
+radar = rbind(NA, radar)
+radar = rbind(NA, radar)
+rownames(radar) = c("Max", "Min", as.vector(fulldata$Név))
+colnames(radar) = c("TESZT", "HOSSZÚ", "SZÓ")
+radar[1, ] = rep(100, ncol(radar))
+radar[2, ] = rep(0, ncol(radar))
+
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(radar), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+colors_repo <- c("#00AFBB", "#E7B800", "#FC4E07", "#FFFF00", "#808000", "#00FFFF", "#008080", "#000080", "#FF00FF", "#800080", "#F08080", "#E9967A", "#73c6b6", "#15c80c", "#939914", "#f5b041", "#16a085","#922b21", "#f4d03f", "#35cacf",  "#0fa316", "#921ba0",  "#cf1919","#8e44ad", "#112aa8", "#f4d03f", "#81a426", "#9caee1", "#873600", "#0b205d", "#17f509",  "#c0392b", "#bfc9ca", "#f5b7b1", "#283747")
+colorsvector = sample(colors_repo, length(fulldata$Név), replace = FALSE)
+titlesvector = as.vector(fulldata$Név)
+titlesvector = sort(titlesvector)
+
+op <- par(mar = c(2, 0, 2, 0))
+par(mfrow = c(1,2))
+
+for(i in 1:length(titlesvector)){
+  create_beautiful_radarchart(
+    data = radar[c(1, 2, i+2), ], caxislabels = c(0, 25, 50, 75, 100),
+    color = colorsvector[i], title = titlesvector[i]
+    )
+}
+```
+
+
+## Eredmények közti eltérések `r ifelse(length(levels(fulldata$Osztály)) > 1, "osztály,", "")` nem `r ifelse(length(levels(fulldata$Tanár)) > 1, "és javító tanár", "")` függvényében
+
+```{asis, echo = length(levels(fulldata$Osztály)) > 1}
+### Osztályok közötti különbségek
+```
+
+```{asis, echo = length(levels(fulldata$Osztály)) > 1}
+A következőkben azt fogjuk megvizsgálni, milyen eltérések vannak az érettségi vizsgán résztvevő `r length(levels(fulldata$Osztály))` osztály között. Előre érdemes leszögezni azonban két dolgot:
+
+(1) Az összehasonlítás főként az előrehozott, és nem előrehozzott vizsgát tevők közötti különbségek miatt érdekes, hiszen az osztályok közötti tényleges összehasonlításhoz az adott osztály előrehozott és nem előrehozott vizsgázóit együtt kellene vizsgálni
+(2) Bizonyos osztályokban a vizsgázók száma alacsonyabb (`r min((fulldata %>% group_by(Osztály) %>% count(Osztály))$n)`), mint másutt (`r max((fulldata %>% group_by(Osztály) %>% count(Osztály))$n)`) ez pedig torzíthatja a becslések pontosságát.
+```
+
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Osztály)) > 1}
+box_osztály = ggplot(data = fulldata, aes(x = Osztály, y = Százalék_teljes, fill = Osztály)) + geom_boxplot(lwd = 1)
+div(ggplotly(box_osztály), align = "center")
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Osztály)) > 1}
+osztaly_desc = fulldata %>% group_by(Osztály) %>% summarize(Átlag = mean(Százalék_teljes), Medián = median(Százalék_teljes), Szórás = sd(Százalék_teljes), MAD = mad(Százalék_teljes), Min = min(Százalék_teljes), Max = max(Százalék_teljes))
+kable(osztaly_desc, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+```
+### Az eredmények sűrűségfüggvénye 
+
+Az eredmények áttekintéséhez célszerű megvizsgálni azt is, milyen valószínűséggel érnek el magas pontszámot a tanulók. A diákok eredménye jellemzően bimodális eloszlást mutat, ez pedig jobban szembeötlik, ha egy sűrűségfüggvényen ábrázoljuk az egyes pontszámok előfordulásának valószínűségét. A sűrűségfüggvény értelmezése a hisztogramhoz hasonló, azonban kevésbé érzékeny a szélsőértékekre:
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, EVAL = TRUE}
+dens1 = ggplot(data = fulldata, aes(x = Százalék_teljes)) + geom_density(fill = "grey", alpha = 0.7) + labs(x = "Vizsgán elért százalék", y = "Sűrűség")
+div(ggplotly(dens1), align = "center")
+```
+
+
+```{asis, echo = "11.A" %in% levels(fulldata$Osztály) | "11.B" %in% levels(fulldata$Osztály) | "11.C" %in% levels(fulldata$Osztály) | "11.D" %in% levels(fulldata$Osztály)}
+ Mivel az előrehozott, és végzős tanulók eredményei között általában nagy különbségek mutatkoznak, a fent láthatókat még egyértelműbbé tehetjük, ha ugyanezt a sűrűségfüggvényt évfolyam (11 és 12) szerint rajzoljuk újra, egyazon ábrán, egymással átfedésben:
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = "11.A" %in% levels(fulldata$Osztály) | "11.B" %in% levels(fulldata$Osztály) | "11.C" %in% levels(fulldata$Osztály) | "11.D" %in% levels(fulldata$Osztály)}
+fulldata_split = fulldata %>% mutate(Évfolyam = as.character(grepl("11", Osztály)))
+fulldata_split$Évfolyam = as.factor(recode(fulldata_split$Évfolyam, 'TRUE'  = "11", 'FALSE' = "12"))
+split_dens = ggplot(data = fulldata_split, aes(x = Százalék_teljes, fill = Évfolyam)) + geom_density(alpha = 0.5) + labs(fill = "Évfolyam") + labs(x = "Vizsgán elért százalék", y = "Sűrűség") + theme(legend.title = element_text("Évfolyam"))
+
+div(ggplotly(split_dens), align = "center")
+```
+
+
+```{asis, echo = length(levels(fulldata$Osztály)) > 1}
+### Hipotézisvizsgálatok
+```
+
+```{asis, echo = length(levels(fulldata$Osztály)) > 1}
+Mielőtt más mutatókra térnénk rá, vizsgáljuk meg azt is, vajon az osztályok között tapasztalható eltérések statisztikailag szignifikánsak-e. Ehhez `r ifelse(length(levels(fulldata$Osztály)) > 2, "egyutas varianciaanalízist", "független mintás Welch-féle t-próbát")` használunk.
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+if (length(levels(fulldata$Osztály)) > 2) {
+
+ANOVA = aov(data = fulldata, Százalék_teljes ~ Osztály)
+tidy = tidy(ANOVA)
+p_val = tidy[1,6]
+colnames(tidy) = c("Paraméter", "DF", "Négyzetösszeg", "Négyzetátlag", "F", "p")
+tidy[,1] = c("Osztály", "Reziduális")
+kable(tidy, digits = 3) %>% kable_styling("striped")
+
+
+} else if (length(levels(fulldata$Osztály)) == 2) {
+  
+osztály_t = t.test(data = fulldata, Százalék_teljes ~ Osztály, var.equal = FALSE, conf.level = 0.95)
+tidy = tidy(osztály_t)
+p_val = tidy[5]
+colnames(tidy) = c("Különbség",levels(fulldata$Osztály)[1],levels(fulldata$Osztály)[2], "t", "p", "df", "Konf.int.alsó", "Konf.int.felső", "módszer", "Alt.")
+tidy[9] = "Welch kétmintás t-próba"
+tidy[10] = "kétoldalas"
+kable(tidy, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+
+} else {
+  p_val = 1
+}
+```
+
+```{asis, echo = length(levels(fulldata$Osztály)) > 1}
+A`r ifelse(length(levels(fulldata$Osztály))>2, "z egyutas varianciaanalízis", " t-próba")` eredménye `r ifelse(p_val > 0.05, "nem szignifikáns.", "szignifikáns.")` Ez azt jelenti, hogy `r ifelse(length(levels(fulldata$Osztály)) > 2, "legalább", "a")` két osztály eredményei `r ifelse(p_val > 0.05 , "nem mutatnak véletlenszinttől eltérő, hibahatáron túli eltérést", "véletlenszinttől eltérő, hibahatáron túli eltérést mutatnak.")`.
+`r ifelse(length(levels(fulldata$Osztály))>2 & p_val < 0.05, "Annak vizsgálatához, melyik két osztályról van szó, ismét páronkénti, független mintás Welch-féle t-próbákat használunk:", "")`
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Osztály)) > 2 & as.numeric(p_val) < 0.05}
+
+ttest = pairwise.t.test(fulldata$Százalék_teljes, fulldata$Osztály, p.adj = "holm")
+tidy_pairwise = tidy(ttest)
+colnames(tidy_pairwise) = c("Csoport 1", "Csoport 2", "p")
+kable(tidy_pairwise, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+
+```
+
+### `r ifelse(length(levels(fulldata$Tanár)) > 1, "Tanárok, ", "")``r ifelse(length(levels(fulldata$Nem)) > 1, "Nemek", "")` közti különbségek.
+
+A továbbiakban röviden megvizsgáljuk azt is, van-e különbség a tanulók teljesítményében `r ifelse(length(levels(fulldata$Tanár)) > 1, "az őket tanító pedagógus", "")` `r ifelse(length(levels(fulldata$Tanár)) > 1 & length(levels(fulldata$Nem)) > 1, "illetve", "")` `r ifelse(length(levels(fulldata$Nem)) > 1,"nem","")` függvényében. 
+
+```{asis echo = length(levels(fulldata$Tanár)) > 1}
+#### Tanárok közti különbségek
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 1}
+box_tanar = ggplot(data = fulldata, aes(x = Tanár, y = Százalék_teljes, fill = Tanár)) + geom_boxplot(lwd = 1) + labs(x = "Tanár", y = "Írásbeli százalék")
+div(ggplotly(box_tanar), align= "center")
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 1}
+tanar_desc = fulldata %>% group_by(Tanár) %>% summarize(Átlag = mean(Százalék_teljes), Medián = median(Százalék_teljes), Szórás = sd(Százalék_teljes), MAD = mad(Százalék_teljes), Min = min(Százalék_teljes), Max = max(Százalék_teljes))
+kable(tanar_desc, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) == 2}
+tanar_t = t.test(data = fulldata, Százalék_teljes ~ Tanár, var.equal = FALSE, conf.level = 0.95)
+tidyt_t = tidy(tanar_t)
+colnames(tidyt_t) = c("Különbség",levels(fulldata$Tanár)[1],levels(fulldata$Tanár)[2], "t", "p", "df", "Konf.int.alsó", "konf.int.felső", "módszer", "Alt.")
+tidyt_t[9] = "Welch kétmintás t-próba"
+tidyt_t[10] = "kétoldalas"
+kable(tidyt_t, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+p_val_tanár = as.numeric(tidyt_t[5])
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 2}
+ANOVA_tanár = aov(data = fulldata, Százalék_teljes ~ Tanár)
+tidy_tanár = tidy(ANOVA_tanár)
+p_val_tanár = tidy_tanár[1,6]
+colnames(tidy_tanár) = c("Paraméter", "DF", "Négyzetösszeg", "Négyzetátlag", "F", "p")
+tidy_tanár[,1] = c("Tanár", "Reziduális")
+kable(tidy_tanár, digits = 3) %>% kable_styling("striped")
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) == 1}
+p_val_tanár = 1
+```
+
+```{asis, echo = length(levels(fulldata$Tanár)) > 1}
+A`r ifelse(length(levels(fulldata$Tanár)) > 2, "z ismételt méréses varianciaanalízis", " független mintás t-próba")` eredménye `r ifelse(p_val_tanár > 0.05, "nem szignifikáns", "szignifikáns")` (p = `r as.numeric(p_val_tanár)`).
+```
+
+```{asis, echo = length(levels(fulldata$Tanár)) > 2 & as.numeric(p_val_tanár) < 0.05}
+Hogy jobban megérthessük az eltérések hátterét, páronkénti t-próbákkal megállapíthatjuk, mely feladatok között mutatkozik szignifikáns eltérés
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 2 & as.numeric(p_val_tanár) < 0.05}
+pairwise_tanár = pairwise.t.test(fulldata$Százalék_teljes, fulldata$Tanár, p.adj = "holm")
+tidy_pairwise = tidy(pairwise_tanár)
+colnames(tidy_pairwise) = c("Csoport 1", "Csoport 2", "p")
+kable(tidy_pairwise, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+```
+
+```{asis echo = length(levels(fulldata$Nem)) > 1 & length(levels(fulldata$Tanár)) > 1}
+#### Nemek közti különbségek
+```
+
+```{asis echo = length(levels(fulldata$Nem)) > 1}
+Hogy teljes képet kaphassunk a tanulók teljesítményét potenciálisan befolyásoló tényezőkről, gyorsan vizsgáljuk meg a teljesítmény nemek szerinti megoszlását is. 
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Nem)) > 1}
+box3 = ggplot(data = fulldata, aes(x = Nem, y = Százalék_teljes, fill = Nem)) + geom_boxplot(lwd = 1) + labs(x = "Nem", y = "Elért százalék")
+div(ggplotly(box3), align = "center")
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Nem)) > 1}
+nemek = fulldata %>% group_by(Nem) %>% summarize(Átlag = mean(Százalék_teljes), Medián = median(Százalék_teljes), Szórás = sd(Százalék_teljes), MAD = mad(Százalék_teljes), Min = min(Százalék_teljes), Max = max(Százalék_teljes))
+kable(nemek, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+```
+
+```{asis, echo = length(levels(fulldata$Nem)) > 1}
+Hogy pontosabb képet kaphassunk a nemek közt esetlegesen mutatkozó eltérések mértékéről, szintén független mintás Welch-féle t-próbát futtatunk az adatokon:
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Nem)) > 1}
+nem_t = t.test(data = fulldata, Százalék_teljes ~ Nem, var.equal = FALSE, conf.level = 0.95)
+tidyt_n = tidy(nem_t)
+colnames(tidyt_n) = c("Különbség",levels(fulldata$Nem)[1],levels(fulldata$Nem)[2], "t", "p", "df", "Konf.int.alsó", "Konf.int.felső", "módszer", "Alt.")
+tidyt_n[9] = "Welch kétmintás t-próba"
+tidyt_n[10] = "kétoldalas"
+kable(tidyt_n, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+p_val_nem = as.numeric(tidyt_n)[5]
+```
+
+```{asis, echo = length(levels(fulldata$Nem)) > 1}
+A független mintás t-próba eredménye `r ifelse(p_val_nem > 0.05, "nem szignifikáns", "szignifikáns")` (p = `r as.numeric(p_val_nem)`).
+```
+
+## Részképességek közötti korrelációk
+
+Végül érdemes vetni egy pillantást az írásbeli érettségi vizsga által mért részképességek pontszámai közötti korrelációra. Az alábbi táblázatban a pozitív értékek pozitív korrelációt jeleznek (minél magasabb az egyik változó értéke, annál magasabb a másiké), a lehető legmagasabb érték matematikailag az 1. 
+
+A második grafikon a mátrix alsó háromszögében a változópárok közti korrelációt jelenítik meg pontdiagramon, egy korrelációs ellipszis segítségével, az átlós elemek a változók hisztogramjait mutatják, a felső háromszög pedig magukat a korrelációs együtthatókat. A csillagjelek (\*) a korrelációk szignifikanciáját mutatják (\* = p < 0.05,\** = p < 0.01, \*** = p < 0.001)  
+
+A két táblázat információtartalma részben fedi egymást (Az első táblázat adatai a másodikban is megtalálhatóak, de kevésbé zsúfolt, intuitívabban értelmezhető)
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+Cols_AllMissing <- function(df){ # helper function
+  as.vector(which(colSums(is.na(df)) == nrow(df)))
+}
+
+corrdata = fulldata %>% select(-one_of(c("Név", "Nem", "Tanár", "Osztály", "Százalék_teljes", "megj", "Írásbeli_százalék"))) %>% select(ends_with("százalék"), -Cols_AllMissing(.))
+corrmat = cor(corrdata)
+corrmat = round(corrmat,3)
+upper = corrmat
+upper[upper.tri(corrmat)]<-""
+upper<-as.data.frame(upper)
+kable(upper) %>% kable_styling("striped")
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE, out.width = 1000, out.height = 800}
+pairs.panels(corrdata, 
+             method = "pearson", #
+             hist.col = "#00AFBB",
+             density = TRUE,
+             ellipses = TRUE,
+             stars = TRUE)
+```
+
+
+## Összefoglalás, záró gondolatok
+
+Ebben a rövid összefoglalóban statisztikai szemmel vizsgáltuk meg a `r params$year` `r params$season`i `r params$level`szintű `r tolower(params$subj)` érettségi eredményeit.Bízom benne, hogy ezek az információk hozzájárulhatnak az intézmény munkájának hatékonyabbá, még tanulóközpontúbbá válásához, és hatékonyabb, jobb eredmények elérését lehetővé tévő pedagógiai módszerek kidolgozásához.
+
+
+
+
+
+
