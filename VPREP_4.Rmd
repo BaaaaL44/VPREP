@@ -16,8 +16,7 @@ params:
   centrum: BGSZC
   school: Vásárhelyi Pál Technikum
   level: közép
-  subj: Angol
-
+  subj: Matematika
 ---
 
 ```{r setup, include=FALSE}
@@ -480,16 +479,26 @@ par(op)
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj == "Matematika"}
-
-if (sum(!is.na(fulldata$Szóbeli)) > 0) {
+if (sum(fulldata$Szóbelizett) > 0) {
+  
 fulldata_color = fulldata %>% mutate(Szóbelizett = as.character(Szóbelizett), color = recode(Szóbelizett, '1'  = "red", '0' = "green"))
 div(plot_ly(data = fulldata_color, x = ~Hosszú_A_százalék, y = ~Hosszú_B_százalék, z = ~Rövid_százalék, marker = list(color = ~color), type="scatter3d", mode="markers", text = ~Név, width = 800, height = 800) %>% layout(
     scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Hosszú A (x)'),yaxis = list(range = c(0,100), title = 'Hosszú B (y)'), zaxis = list(range = c(0,100), title = 'Rövid (z)'))), align = "center")
 
+}
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj == "Matematika"}
+if (sum(fulldata$Szóbelizett) > 0) {
+  
 szóbeli_data = fulldata %>% filter(!is.na(Szóbeli_százalék))
 div(plot_ly(data = szóbeli_data, x = ~Hosszú_A_százalék, y = ~Hosszú_B_százalék, z = ~Rövid_százalék,color = ~Szóbeli_százalék,  type="scatter3d", mode="markers", text = ~Név, width = 800, height = 800) %>% layout(
     scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Hosszú A (x)'),yaxis = list(range = c(0,100), title = 'Hosszú B (y)'), zaxis = list(range = c(0,100), title = 'Rövid (z)'))), align = "center")
+}
+```
 
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj == "Matematika"}
+if (sum(fulldata$Szóbelizett) > 0){
 radar = as.data.frame(fulldata %>% filter(is.na(Szóbeli_százalék)) %>% arrange(Név) %>% select(ends_with("százalék"), -c(Írásbeli_százalék, Szóbeli_százalék)))
 radar = rbind(NA, radar)
 radar = rbind(NA, radar)
@@ -556,10 +565,19 @@ for(i in 1:length(titlesvector2)){
     )
 }
 par(op) 
-} else {
+} 
+
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj == "Matematika"}
+if (sum(fulldata$Szóbelizett) == 0){
  div(plot_ly(data = fulldata, x = ~Hosszú_A_százalék, y = ~Hosszú_B_százalék, z = ~Rövid_százalék, type="scatter3d", mode="markers", text = ~Név, width = 800, height = 800) %>% layout(
     scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Hosszú A (x)'),yaxis = list(range = c(0,100), title = 'Hosszú B (y)'), zaxis = list(range = c(0,100), title = 'Rövid (z)'))), align = "center") 
-  
+}
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj == "Matematika"}
+if (sum(fulldata$Szóbelizett) == 0){  
 radar = as.data.frame(fulldata %>% arrange(Név) %>% select(ends_with("százalék"), -Írásbeli_százalék, -Szóbeli_százalék))
 radar = rbind(NA, radar)
 radar = rbind(NA, radar)
