@@ -16,7 +16,7 @@ params:
   centrum: BGSZC
   school: Vásárhelyi Pál Technikum
   level: közép
-  subj: Magyar
+  subj: Angol
 ---
 
 ```{r setup, include=FALSE}
@@ -242,7 +242,6 @@ A gyakorisági mutatók után vessünk egy pillantást az általunk vizsgált in
 TIPS = c("A vizsgakomponens neve", "A mintaelemszám, ami alapján az értékek kiszámításra kerültek", "Legalacsonyabb mért érték", "Legmagasabb mért érték", "Medián, a sorba rendezett adatok középső eleme, páros mintaelemszám esetén a középső kettő számtani közepe", "Első kvartilis: Az érték, ami alá az adatok 25%-a esik", "Harmadik kvartilis: Az érték, ami fölé az adatok 25%-a esik", "Interkvartilis féltartomány: az első és harmadik kvartilis terjedelme", "Medián Abszolút Eltérés: szórási mutató, ami a szórásnál kevésbé érzékeny a szélsőértékekre. Értéke a mediántól való abszzolút eltérések mediánja", "Számtani, súlyozatlan átlag", "Szórás", "Sztenderd hiba: A minták átlagainak szórása a populációátlag körül", "Konfidenciatartomány")
 sumdata = fulldata %>% select(-one_of(c("Név", "Osztály", "Tanár", "Nem"))) %>% select(sort(current_vars())) %>% select(-Írásbeli)
 stats = get_summary_stats(sumdata)
-stats = stats %>%  mutate_if(is.numeric, round, 2)
 colnames(stats) = c("Változó", "N", "Min", "Max", "Med", "Q1", "Q3", "IQR", "MAD", "Átlag", "SD", "SE", "CI")
 colnames(stats) = text_spec(colnames(stats), "html", tooltip = TIPS)
 kable(stats, "html", escape = F, digits = 3) %>% kable_styling("striped")
@@ -265,15 +264,22 @@ ggplotly(ggplot(data = best, aes(x = reorder(Név,Százalék_teljes), y = Száza
 
 ## Részképességek közötti `r ifelse(ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2, "ismételt méréses varianciaanalízis", "páros t-próba")`, részképességek vizualizációja
 
-Először vizsgáljuk meg a vizsga komponenseinek leíró statisztikai adatait az alábbi táblázat és dobozdiagram segítségével. A diagram a részfeladatok közti különbségeket zemlélteti. A mediánok, illetve kvartilisek megjelenítéséhez az egérkurzort húzzuk az egyes dobozok fölé, az oldalsó jelmagyarázatra kattintva pedig eltűntethetünk egyes elemeket
+Először vizsgáljuk meg a vizsga komponenseinek leíró statisztikai adatait az alábbi táblázat és dobozdiagram segítségével. A diagram a részfeladatok közti különbségeket zemlélteti. A mediánok, illetve kvartilisek megjelenítéséhez az egérkurzort húzzuk az egyes dobozok fölé, az oldalsó jelmagyarázatra kattintva pedig eltűntethetünk egyes elemeket.
+```{asis echo = params$subj == "Matematika"}
+(Matematika tantárgy esetén A szóbeli eredményeket a varianciaanalízis figyelmen kívül hagyja. Ez azért van, mert ismételt méréses varianciaanalízist csak olyan rekordokból lehet számolni, amelyek minden mérésre érvényes eredménnyel rendelkeznek, matematika tárgy esetén viszont ez annyira lecsökkentené a mérésenkénti adatok számát, hogy az eredmény értékelhetetlen lenne)
+```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE}
 fulldata_long = fulldata %>% gather(key = "Feladat", value = "Százalék", colnames(select(fulldata, ends_with("százalék"), -Írásbeli_százalék))) %>% convert_as_factor(Név, Feladat)
 
+if (sum(!is.na(fulldata$Szóbeli)) == 1){
+fulldata_long = fulldata %>% gather(key = "Feladat", value = "Százalék", colnames(select(fulldata, ends_with("százalék"), -c(Írásbeli_százalék, Szóbeli_százalék)))) %>% convert_as_factor(Név, Feladat)  
+}
+
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 1}
-rész_desc = fulldata_long %>% group_by(Feladat) %>% summarize(Átlag = mean(Százalék), Medián = median(Százalék), Szórás = sd(Százalék), MAD = mad(Százalék), Min = min(Százalék), Max = max(Százalék))
+rész_desc = fulldata_long %>% group_by(Feladat) %>% summarize(Átlag = mean(Százalék, na.rm = TRUE), Medián = median(Százalék, na.rm = TRUE), Szórás = sd(Százalék, na.rm = TRUE), MAD = mad(Százalék, na.rm = TRUE), Min = min(Százalék, na.rm = TRUE), Max = max(Százalék, na.rm = TRUE))
 kable(rész_desc, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
 ```
 
@@ -291,9 +297,21 @@ div(ggplotly(box_rep), align = "center")
 
  Ebben a szekcióban `r ifelse(ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2, "ismételt méréses varianciaanalízis", "páros t-próba")` segítségével megvizsgáljuk, az írásbeli vizsga feladatainak részpontszámai között mutatkozik-e szignifikáns, tehát véletlenszinttől eltérő különbség.
 
-```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2}
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2 & params$subj != "Matematika"}
 TIPS_aov = c("A vizsgált tényező neve", "Az F-statisztika kiszámításához használt első szabadsági fok (csoportok közötti)", "Az F-statisztika kiszámításához használt második szabadsági fok (Csoporton belüli)", "F-statisztika, matematikailag a csoportok közötti és a hibavariancia hányadosa", "p-érték, ha kisebb 0.05-nél, a csoportok közötti különbség statisztikailag szignifikánsnak tekinthető", "Általánosított éta-négyzet, skálafüggetlenül mutatja a csoportok közti eltérés mértékét")
+
 res.aov <- anova_test(data = fulldata_long, dv = Százalék, wid = Név, within = Feladat)
+eredmény= get_anova_table(res.aov)
+eredmény = eredmény[,-6]
+colnames(eredmény) = text_spec(c("Hatás", "DF1", "DF2", "F", "p", "hatásmérték"), "html", tooltip = TIPS_aov)
+kable(eredmény, "html", escape = F, digits = 3) %>% kable_styling("striped", position = "center")
+feladat_p = eredmény[5]
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2 & params$subj == "Matematika"}
+TIPS_aov = c("A vizsgált tényező neve", "Az F-statisztika kiszámításához használt első szabadsági fok (csoportok közötti)", "Az F-statisztika kiszámításához használt második szabadsági fok (Csoporton belüli)", "F-statisztika, matematikailag a csoportok közötti és a hibavariancia hányadosa", "p-érték, ha kisebb 0.05-nél, a csoportok közötti különbség statisztikailag szignifikánsnak tekinthető", "Általánosított éta-négyzet, skálafüggetlenül mutatja a csoportok közti eltérés mértékét")
+
+res.aov <- anova_test(data = fulldata_long %>% filter(Feladat != "Szóbeli_százalék"), dv = Százalék, wid = Név, within = Feladat)
 eredmény= get_anova_table(res.aov)
 eredmény = eredmény[,-6]
 colnames(eredmény) = text_spec(c("Hatás", "DF1", "DF2", "F", "p", "hatásmérték"), "html", tooltip = TIPS_aov)
@@ -863,8 +881,10 @@ div(ggplotly(box_osztály), align = "center")
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Osztály)) > 1}
+TIPS_osztaly_desc = c("Tanár", "Számtani átlag", "Medián, a sorba rendezett adatok közül a középső, az adatok 50%-a alacsonyabb ennél az értéknél", "Szórás, az átlagtól való négyzetes eltérések átlagának gyöke", "Medián Abszolút Eltérés, a mediántól való abszolút eltérések mediánja. A szórásnál kevésbé érzékeny a szélsőértékekre", "A legkisebb megfigyelt érték", "A legnagyobb megfigyelt érték")
 osztaly_desc = fulldata %>% group_by(Osztály) %>% summarize(Átlag = mean(Százalék_teljes), Medián = median(Százalék_teljes), Szórás = sd(Százalék_teljes), MAD = mad(Százalék_teljes), Min = min(Százalék_teljes), Max = max(Százalék_teljes))
-kable(osztaly_desc, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+colnames(osztaly_desc) = text_spec(c("Osztály", "Átlag", "Medián", "Szórás", "MAD", "Min", "Max"), "html", tooltip = TIPS_osztaly_desc)
+kable(osztaly_desc,"html", escape = F,  digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
 ```
 ### Az eredmények sűrűségfüggvénye 
 
@@ -899,24 +919,25 @@ Mielőtt más mutatókra térnénk rá, vizsgáljuk meg azt is, vajon az osztál
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
 if (length(levels(fulldata$Osztály)) > 2) {
-
+TIPS_oszt = c("A vizsgált paraméter neve", "Szabadsági fok: Az F-eloszlás kritikus értékeinek megtalálásához szükséges", "Négyzetösszeg: Paraméterek esetén a regressziós sík és az átlagok négyzetes távolságának összege, reziduálisok esetén a megfigyelt adatpontok és a becsült értékek négyzetes különbségének összege", "A négyzetösszegek osztva a szabadsági fokkal (DF)", "F-statisztika, a csoportok közti és a csoporton belüli variancia hányadosa", "p-érték, ha 0.05-nél kisebb, az eredmény szignifikánsnak tekinthető")
 ANOVA = aov(data = fulldata, Százalék_teljes ~ Osztály)
 tidy = tidy(ANOVA)
 p_val = tidy[1,6]
-colnames(tidy) = c("Paraméter", "DF", "Négyzetösszeg", "Négyzetátlag", "F", "p")
+colnames(tidy) = text_spec(c("Paraméter", "DF", "Négyzetösszeg", "Négyzetátlag", "F", "p"), "html", tooltip = TIPS_oszt)
 tidy[,1] = c("Osztály", "Reziduális")
-kable(tidy, digits = 3) %>% kable_styling("striped")
+kable(tidy, "html", escape = F, digits = 3) %>% kable_styling("striped")
 
 
 } else if (length(levels(fulldata$Osztály)) == 2) {
-  
+
+TIPS_oszt_t = c("Két osztály átlagának különbsége", "Első vizsgált osztály", "Második vizsgált osztály", "t-statisztika, matematikailag a két osztály átlagának különbsége osztva a két osztály szórásával", "p-érték, ha 0.05-nél kisebb, az eredmény szignifikánsnak tekinthető", "Szabadsági fok, a t-statisztika kritikus értékeinek megállapításához szükséges", "Konfidenciatartomány alsó határa", "Konfidenciatartomány felső határa", "A végzett t-próba típusa. Mivel jelen adatoknál a két csoport varianciájának azonossága nem garantálható, ez Welch-féle t-próba", "Alternatíva: Mivel nincs előzetes hipotézisünk az eltérés irányáról, kétoldalas tesztet alkalmazunk")    
 osztály_t = t.test(data = fulldata, Százalék_teljes ~ Osztály, var.equal = FALSE, conf.level = 0.95)
 tidy = tidy(osztály_t)
 p_val = tidy[5]
-colnames(tidy) = c("Különbség",levels(fulldata$Osztály)[1],levels(fulldata$Osztály)[2], "t", "p", "df", "Konf.int.alsó", "Konf.int.felső", "módszer", "Alt.")
+colnames(tidy) = text_spec(c("Különbség",levels(fulldata$Osztály)[1],levels(fulldata$Osztály)[2], "t", "p", "df", "Konf.int.alsó", "Konf.int.felső", "módszer", "Alt."), "html", tooltip = TIPS_oszt_t)
 tidy[9] = "Welch kétmintás t-próba"
 tidy[10] = "kétoldalas"
-kable(tidy, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+kable(tidy, "html", escape = F, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
 
 } else {
   p_val = 1
@@ -930,10 +951,12 @@ A`r ifelse(length(levels(fulldata$Osztály))>2, "z egyutas varianciaanalízis", 
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Osztály)) > 2 & as.numeric(p_val) < 0.05}
 
-ttest = pairwise.t.test(fulldata$Százalék_teljes, fulldata$Osztály, p.adj = "holm")
-tidy_pairwise = tidy(ttest)
-colnames(tidy_pairwise) = c("Csoport 1", "Csoport 2", "p")
-kable(tidy_pairwise, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+TIPS_pair_osztaly = c("Az első vizsgált csoport", "A második vizsgált csoport", "Az első csoport mintaelemszáma", "A második csoport mintaelemszáma", "t-statisztika, a két csoport átlaga közötti különbségnek a két csoport varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
+pairwise_osztaly = fulldata_long %>% pairwise_t_test(Százalék ~ Osztály, paired = FALSE, p.adjust.method = "holm")
+pairwise_osztaly = pairwise_osztaly[,2:ncol(pairwise_osztaly)]
+pairwise_osztaly = pairwise_osztaly[,1:ncol(pairwise_osztaly)-1]
+colnames(pairwise_osztaly) = text_spec(c("Csoport 1", "Csoport 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_pair_osztaly)
+kable(pairwise_osztaly, "html", escape = F, digits = 3) %>% kable_styling("striped", position = "center")
 
 ```
 
@@ -951,27 +974,31 @@ div(ggplotly(box_tanar), align= "center")
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 1}
+TIPS_tanar_desc = c("Tanár", "Számtani átlag", "Medián, a sorba rendezett adatok közül a középső, az adatok 50%-a alacsonyabb ennél az értéknél", "Szórás, az átlagtól való négyzetes eltérések átlagának gyöke", "Medián Abszolút Eltérés, a mediántól való abszolút eltérések mediánja. A szórásnál kevésbé érzékeny a szélsőértékekre", "A legkisebb megfigyelt érték", "A legnagyobb megfigyelt érték")
 tanar_desc = fulldata %>% group_by(Tanár) %>% summarize(Átlag = mean(Százalék_teljes), Medián = median(Százalék_teljes), Szórás = sd(Százalék_teljes), MAD = mad(Százalék_teljes), Min = min(Százalék_teljes), Max = max(Százalék_teljes))
-kable(tanar_desc, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+colnames(tanar_desc) = text_spec(c("Tanár", "Átlag", "Medián", "Szórás", "MAD", "Min", "Max"), "html", tooltip = TIPS_tanar_desc)
+kable(tanar_desc, "html", escape = F, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) == 2}
+TIPS_tanar = c("Két osztály átlagának különbsége", "Első vizsgált osztály", "Második vizsgált osztály", "t-statisztika, matematikailag a két osztály átlagának különbsége osztva a két osztály szórásával", "p-érték, ha 0.05-nél kisebb, az eredmény szignifikánsnak tekinthető", "Szabadsági fok, a t-statisztika kritikus értékeinek megállapításához szükséges", "Konfidenciatartomány alsó határa", "Konfidenciatartomány felső határa", "A végzett t-próba típusa. Mivel jelen adatoknál a két csoport varianciájának azonossága nem garantálható, ez Welch-féle t-próba", "Alternatíva: Mivel nincs előzetes hipotézisünk az eltérés irányáról, kétoldalas tesztet alkalmazunk")  
 tanar_t = t.test(data = fulldata, Százalék_teljes ~ Tanár, var.equal = FALSE, conf.level = 0.95)
 tidyt_t = tidy(tanar_t)
-colnames(tidyt_t) = c("Különbség",levels(fulldata$Tanár)[1],levels(fulldata$Tanár)[2], "t", "p", "df", "Konf.int.alsó", "konf.int.felső", "módszer", "Alt.")
+colnames(tidyt_t) = text_spec(c("Különbség",levels(fulldata$Tanár)[1],levels(fulldata$Tanár)[2], "t", "p", "df", "Konf.int.alsó", "konf.int.felső", "módszer", "Alt."), "html", tooltip = TIPS_tanar)
 tidyt_t[9] = "Welch kétmintás t-próba"
 tidyt_t[10] = "kétoldalas"
-kable(tidyt_t, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+kable(tidyt_t, "html", escape = F, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
 p_val_tanár = as.numeric(tidyt_t[5])
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 2}
+TIPS_tanar_aov = c("A vizsgált paraméter neve", "Szabadsági fok: Az F-eloszlás kritikus értékeinek megtalálásához szükséges", "Négyzetösszeg: Paraméterek esetén a regressziós sík és az átlagok négyzetes távolságának összege, reziduálisok esetén a megfigyelt adatpontok és a becsült értékek négyzetes különbségének összege", "A négyzetösszegek osztva a szabadsági fokkal (DF)", "F-statisztika, a csoportok közti és a csoporton belüli variancia hányadosa", "p-érték, ha 0.05-nél kisebb, az eredmény szignifikánsnak tekinthető")
 ANOVA_tanár = aov(data = fulldata, Százalék_teljes ~ Tanár)
 tidy_tanár = tidy(ANOVA_tanár)
 p_val_tanár = tidy_tanár[1,6]
-colnames(tidy_tanár) = c("Paraméter", "DF", "Négyzetösszeg", "Négyzetátlag", "F", "p")
+colnames(tidy_tanár) = text_spec(c("Paraméter", "DF", "Négyzetösszeg", "Négyzetátlag", "F", "p"), "html", tooltip = TIPS_tanar_aov)
 tidy_tanár[,1] = c("Tanár", "Reziduális")
-kable(tidy_tanár, digits = 3) %>% kable_styling("striped")
+kable(tidy_tanár, "html", escape = F, digits = 3) %>% kable_styling("striped")
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) == 1}
@@ -987,10 +1014,14 @@ Hogy jobban megérthessük az eltérések hátterét, páronkénti t-próbákkal
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 2 & as.numeric(p_val_tanár) < 0.05}
-pairwise_tanár = pairwise.t.test(fulldata$Százalék_teljes, fulldata$Tanár, p.adj = "holm")
-tidy_pairwise = tidy(pairwise_tanár)
-colnames(tidy_pairwise) = c("Csoport 1", "Csoport 2", "p")
-kable(tidy_pairwise, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+
+TIPS_pair_tanar = c("Az első vizsgált csoport", "A második vizsgált csoport", "Az első csoport mintaelemszáma", "A második csoport mintaelemszáma", "t-statisztika, a két csoport átlaga közötti különbségnek a két csoport varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
+pairwise_tanar = fulldata_long %>% pairwise_t_test(Százalék ~ Tanár, paired = FALSE, p.adjust.method = "holm")
+pairwise_tanar = pairwise_tanar[,2:ncol(pairwise_tanar)]
+pairwise_tanar = pairwise_tanar[,1:ncol(pairwise_tanar)-1]
+colnames(pairwise_tanar) = text_spec(c("Csoport 1", "Csoport 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_pair_tanar)
+kable(pairwise_tanar, "html", escape = F, digits = 3) %>% kable_styling("striped", position = "center")
+
 ```
 
 ```{asis echo = length(levels(fulldata$Nem)) > 1 & length(levels(fulldata$Tanár)) > 1}
@@ -1007,8 +1038,10 @@ div(ggplotly(box3), align = "center")
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Nem)) > 1}
+TIPS_nemek = c("Nem", "Számtani átlag", "Medián, a sorba rendezett adatok közül a középső, az adatok 50%-a alacsonyabb ennél az értéknél", "Szórás, az átlagtól való négyzetes eltérések átlagának gyöke", "Medián Abszolút Eltérés, a mediántól való abszolút eltérések mediánja. A szórásnál kevésbé érzékeny a szélsőértékekre", "A legkisebb megfigyelt érték", "A legnagyobb megfigyelt érték")
 nemek = fulldata %>% group_by(Nem) %>% summarize(Átlag = mean(Százalék_teljes), Medián = median(Százalék_teljes), Szórás = sd(Százalék_teljes), MAD = mad(Százalék_teljes), Min = min(Százalék_teljes), Max = max(Százalék_teljes))
-kable(nemek, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+colnames(nemek) = text_spec(c("Nem", "Átlag", "Medián", "Szórás","MAD", "Min", "Max"), "html", tooltip = TIPS_nemek)
+kable(nemek, "html", escape = F, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
 ```
 
 ```{asis, echo = length(levels(fulldata$Nem)) > 1}
@@ -1016,12 +1049,13 @@ Hogy pontosabb képet kaphassunk a nemek közt esetlegesen mutatkozó eltérése
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Nem)) > 1}
+TIPS_nem = c("Két osztály átlagának különbsége", "Első vizsgált osztály", "Második vizsgált osztály", "t-statisztika, matematikailag a két osztály átlagának különbsége osztva a két osztály szórásával", "p-érték, ha 0.05-nél kisebb, az eredmény szignifikánsnak tekinthető", "Szabadsági fok, a t-statisztika kritikus értékeinek megállapításához szükséges", "Konfidenciatartomány alsó határa", "Konfidenciatartomány felső határa", "A végzett t-próba típusa. Mivel jelen adatoknál a két csoport varianciájának azonossága nem garantálható, ez Welch-féle t-próba", "Alternatíva: Mivel nincs előzetes hipotézisünk az eltérés irányáról, kétoldalas tesztet alkalmazunk")  
 nem_t = t.test(data = fulldata, Százalék_teljes ~ Nem, var.equal = FALSE, conf.level = 0.95)
 tidyt_n = tidy(nem_t)
-colnames(tidyt_n) = c("Különbség",levels(fulldata$Nem)[1],levels(fulldata$Nem)[2], "t", "p", "df", "Konf.int.alsó", "Konf.int.felső", "módszer", "Alt.")
+colnames(tidyt_n) = text_spec(c("Különbség",levels(fulldata$Nem)[1],levels(fulldata$Nem)[2], "t", "p", "df", "Konf.int.alsó", "Konf.int.felső", "módszer", "Alt."), "html", tooltip = TIPS_nem)
 tidyt_n[9] = "Welch kétmintás t-próba"
 tidyt_n[10] = "kétoldalas"
-kable(tidyt_n, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+kable(tidyt_n, "html", escape = F, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
 p_val_nem = as.numeric(tidyt_n)[5]
 ```
 
@@ -1043,7 +1077,7 @@ Cols_AllMissing <- function(df){ # helper function
 }
 
 if (sum(!is.na(fulldata$Szóbeli)) <= 3){
- corrdata = fulldata %>% select(-one_of(c("Név", "Nem", "Tanár", "Osztály", "Százalék_teljes", "megj", "Írásbeli_százalék"))) %>% select(ends_with("százalék"), -Cols_AllMissing(.), -Szóbeli_százalék) 
+ corrdata = fulldata %>% select(-one_of(c("Név", "Nem", "Tanár", "Osztály", "Százalék_teljes", "Írásbeli_százalék"))) %>% select(ends_with("százalék"), -Cols_AllMissing(.), -Szóbeli_százalék) 
 corrmat = cor(corrdata)
 corrmat = round(corrmat,3)
 upper = corrmat
@@ -1051,8 +1085,8 @@ upper[upper.tri(corrmat)]<-""
 upper<-as.data.frame(upper)
 kable(upper) %>% kable_styling("striped")  
 }else{
-corrdata = fulldata %>% select(-one_of(c("Név", "Nem", "Tanár", "Osztály", "Százalék_teljes", "megj", "Írásbeli_százalék"))) %>% select(ends_with("százalék"), -Cols_AllMissing(.))
-corrmat = cor(corrdata)
+corrdata = fulldata %>% select(-one_of(c("Név", "Nem", "Tanár", "Osztály", "Százalék_teljes", "Írásbeli_százalék"))) %>% select(ends_with("százalék"), -Cols_AllMissing(.))
+corrmat = cor(corrdata, use = "pairwise.complete.obs")
 corrmat = round(corrmat,3)
 upper = corrmat
 upper[upper.tri(corrmat)]<-""
