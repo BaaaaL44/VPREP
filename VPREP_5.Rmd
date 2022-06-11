@@ -1,5 +1,5 @@
 ---
-title: "`r params$subj` Írásbeli Érettségi Vizsga Eredményei"
+title: "`r params$subj` Érettségi Vizsga Eredményei"
 author: "Tóth Bálint"
 date: "`r Sys.Date()`"
 output:
@@ -16,7 +16,7 @@ params:
   centrum: BGSZC
   school: Vásárhelyi Pál Technikum
   level: közép
-  subj: Angol
+  subj: Matematika
 ---
 
 ```{r setup, include=FALSE}
@@ -131,7 +131,7 @@ fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "K
 
 ## Bevezetés
 
-Az alábbi dokumentum a `r params$year` `r params$season`i `r params$level`szintű `r tolower(params$subj)` érettségi eredményeit mutatja be a `r params$centrum` `r params$school`ban.Először megvizsgáljuk a tanulók számának osztályonkénti, illetve nemenkénti eloszlását, ezt követően pedig adatvizualizációs eszközök, és leíró, valamint inferenciális statisztikai módszerek használatával vonunk le következtetéseket a tanulók teljesítményéről, képességeiről.Az elemzések során a tanulók osztályát, nemét, az őket tanító pedagógus nevét, illetve az írásbeli vizsgán mért részképességek (Olvasott szövegértés, Nyelvhelyesség, Hallott szövegértés, Íráskészség) nyers pontszámban és százalékban kifejezett értékét vettük figyelembe.A tanulók nevét, és egyéb adatait az intézmény mindenkori adatkezelési szabályzatának (GDPR) és eljárásrendjének megfelelően kezeltük.
+Az alábbi dokumentum a `r params$year` `r params$season`i `r params$level`szintű `r tolower(params$subj)` érettségi eredményeit mutatja be a `r params$centrum` `r params$school`ban.Először megvizsgáljuk a tanulók osztályonkénti, illetve nemenkénti eloszlását, illetve az elért eredmények, jegyek eloszlását, ezt követően pedig adatvizualizációs eszközök, és leíró, valamint inferenciális statisztikai módszerek használatával vonunk le következtetéseket a tanulók teljesítményéről, képességeiről.Az elemzések során a tanulók osztályát, nemét, az őket tanító pedagógus nevét, illetve az írásbeli vizsgán mért részképességek (Olvasott szövegértés, Nyelvhelyesség, Hallott szövegértés, Íráskészség) nyers pontszámban és százalékban kifejezett értékét vettük figyelembe.A tanulók nevét, és egyéb adatait az intézmény mindenkori adatkezelési szabályzatának (GDPR) és eljárásrendjének megfelelően kezeltük.
 
 ## Gyakorisági, Leíró statisztikai adatok
 
@@ -255,7 +255,6 @@ best = bestdata %>% group_by(Osztály) %>% arrange(desc(Százalék_teljes), .by_
 kable(best, col.names = c("Név", "Osztály", "Elért százalék")) %>% kable_styling("striped") 
 ```
 
-
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
 plotdata = fulldata %>% select(Név, Osztály, Százalék_teljes)
 best = plotdata %>% group_by(Osztály) %>% arrange(desc(Százalék_teljes), .by_group = T) %>% top_n(3, wt = Százalék_teljes)
@@ -278,9 +277,11 @@ fulldata_long = fulldata %>% gather(key = "Feladat", value = "Százalék", colna
 
 ```
 
-```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 1}
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
+TIPS_rész = c("Tanár", "Számtani átlag", "Medián, a sorba rendezett adatok közül a középső, az adatok 50%-a alacsonyabb ennél az értéknél", "Szórás, az átlagtól való négyzetes eltérések átlagának gyöke", "Medián Abszolút Eltérés, a mediántól való abszolút eltérések mediánja. A szórásnál kevésbé érzékeny a szélsőértékekre", "A legkisebb megfigyelt érték", "A legnagyobb megfigyelt érték")
 rész_desc = fulldata_long %>% group_by(Feladat) %>% summarize(Átlag = mean(Százalék, na.rm = TRUE), Medián = median(Százalék, na.rm = TRUE), Szórás = sd(Százalék, na.rm = TRUE), MAD = mad(Százalék, na.rm = TRUE), Min = min(Százalék, na.rm = TRUE), Max = max(Százalék, na.rm = TRUE))
-kable(rész_desc, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
+colnames(rész_desc) = text_spec(c("Vizsgarész", "Átlag", "Medián", "Szórás", "MAD", "Min", "Max"), "html", tooltip = TIPS_rész)
+kable(rész_desc, "html", escape = F, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 1}
