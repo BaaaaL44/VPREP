@@ -6,7 +6,7 @@ date: "`r Sys.Date()`"
 output:
   html_document:
     toc: true
-    toc_float: false
+    toc_float: true
     toc_depth: 4
     df_print: tibble
   pdf_document: default
@@ -17,7 +17,7 @@ params:
   centrum: BGSZC
   school: Vásárhelyi Pál Technikum
   level: közép
-  subj: Matematika
+  subj: Turisztika
 ---
 
 ```{r setup, include=FALSE}
@@ -55,6 +55,7 @@ library(ggiraphExtra)
 library(psych)
 library(shiny)
 library(DT)
+library(stringr)
 ```
 
 ```{r, warning = FALSE, message = FALSE, echo = FALSE}
@@ -253,6 +254,7 @@ TIPS = c("A vizsgakomponens neve", "A mintaelemszám, ami alapján az értékek 
 sumdata = fulldata %>% select(-one_of(c("Név", "Osztály", "Tanár", "Nem"))) %>% select(sort(current_vars())) %>% select(-Írásbeli)
 stats = get_summary_stats(sumdata)
 colnames(stats) = c("Változó", "N", "Min", "Max", "Med", "Q1", "Q3", "IQR", "MAD", "Átlag", "SD", "SE", "CI")
+stats = stats %>% mutate(Változó = str_replace_all(stats$Változó, "_", " "))
 colnames(stats) = text_spec(colnames(stats), "html", tooltip = TIPS)
 kable(stats, "html", escape = F, digits = 3) %>% kable_styling("striped")
 ```
@@ -268,7 +270,7 @@ kable(best, col.names = c("Név", "Osztály", "Elért százalék")) %>% kable_st
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
 plotdata = fulldata %>% select(Név, Osztály, Százalék_teljes)
 best = plotdata %>% group_by(Osztály) %>% arrange(desc(Százalék_teljes), .by_group = T) %>% top_n(3, wt = Százalék_teljes)
-ggplotly(ggplot(data = best, aes(x = reorder(Név,Százalék_teljes), y = Százalék_teljes, fill = reorder(Név, Százalék_teljes))) +geom_col() + labs(fill = "Tanuló") + theme(axis.title.y=element_blank()) + coord_flip() + facet_wrap(~ Osztály), height = 900, width = 900, tooltip = "Százalék_teljes")
+ggplotly(ggplot(data = best, aes(x = reorder(Név,Százalék_teljes), y = Százalék_teljes, fill = reorder(Név, Százalék_teljes))) +geom_col() + labs(fill = "Tanuló") + theme(axis.title.y=element_blank()) + coord_flip() + facet_wrap(~ Osztály) + ylab("Elért eredmény"), height = 900, width = 900, tooltip = "Százalék_teljes")
 ```
 
 ## Részképességek közötti `r ifelse(ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2, "ismételt méréses varianciaanalízis", "páros t-próba")`, részképességek vizualizációja
@@ -290,16 +292,17 @@ fulldata_long = fulldata %>% gather(key = "Feladat", value = "Százalék", colna
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = TRUE}
 TIPS_rész = c("Tanár", "Számtani átlag", "Medián, a sorba rendezett adatok közül a középső, az adatok 50%-a alacsonyabb ennél az értéknél", "Szórás, az átlagtól való négyzetes eltérések átlagának gyöke", "Medián Abszolút Eltérés, a mediántól való abszolút eltérések mediánja. A szórásnál kevésbé érzékeny a szélsőértékekre", "A legkisebb megfigyelt érték", "A legnagyobb megfigyelt érték")
 rész_desc = fulldata_long %>% group_by(Feladat) %>% summarize(Átlag = mean(Százalék, na.rm = TRUE), Medián = median(Százalék, na.rm = TRUE), Szórás = sd(Százalék, na.rm = TRUE), MAD = mad(Százalék, na.rm = TRUE), Min = min(Százalék, na.rm = TRUE), Max = max(Százalék, na.rm = TRUE))
+rész_desc = rész_desc %>% mutate(Feladat = str_replace_all(Feladat, "_", " "))
 colnames(rész_desc) = text_spec(c("Vizsgarész", "Átlag", "Medián", "Szórás", "MAD", "Min", "Max"), "html", tooltip = TIPS_rész)
 kable(rész_desc, "html", escape = F, digits = 3) %>% kable_styling("striped", full_width = F, position = "center")
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 1}
 if(params$subj == "Turisztika"){
-box_rep = ggplot(data = fulldata_long, aes(x = Feladat, y = Százalék, fill = Feladat)) + geom_boxplot(lwd = 1) + coord_flip()
+box_rep = ggplot(data = fulldata_long, aes(x = str_replace_all(Feladat, "_", " "), y = Százalék, fill = Feladat)) + geom_boxplot(lwd = 1) + coord_flip()
 div(ggplotly(box_rep), align = "center")
 } else{
-box_rep = ggplot(data = fulldata_long, aes(x = Feladat, y = Százalék, fill = Feladat)) + geom_boxplot(lwd = 1)  
+box_rep = ggplot(data = fulldata_long, aes(x = str_replace_all(Feladat, "_", " "), y = Százalék, fill = Feladat)) + geom_boxplot(lwd = 1) + xlab("Feladat")  
 div(ggplotly(box_rep), align = "center")  
 }
 ```
@@ -350,7 +353,7 @@ Mivel a varianciaanalízis eredménye szignifikáns, páronkénti t-próbákkal 
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 2 & as.numeric(feladat_p) < 0.05}
 TIPS_t2 = c("Az első vizsgált mérés", "A második vizsgált mérés", "Az első mérés mintaelemszáma", "A második mérés mintaelemszáma", "t-statisztika, a két csoport átlaga közötti különbségnek a két csoport varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
-rep_pair = fulldata_long %>% pairwise_t_test(Százalék ~ Feladat, paired = TRUE, p.adjust.method = "holm")
+rep_pair = fulldata_long %>% mutate(Feladat = str_replace_all(Feladat, "_", " "))%>% pairwise_t_test(Százalék ~ Feladat, paired = TRUE, p.adjust.method = "holm")
 rep_pair = rep_pair[,2:ncol(rep_pair)]
 rep_pair = rep_pair[,1:ncol(rep_pair)-1]
 colnames(rep_pair) = text_spec(c("Mérés 1", "Mérés 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_t2)
@@ -453,6 +456,13 @@ par(op)
 
 ```
 
+```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj == "Turisztika"}
+második_plot = ggplotly(ggplot(fulldata, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = paste('Írásbeli és szóbeli eredmények korrelációja', " (r = ",round(cor(fulldata$Írásbeli_százalék, fulldata$Szóbeli_százalék), 3), ")"), plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
+yaxis = list(title = "Szóbeli pontszám"), titlefont = list(size = 15))
+
+div(második_plot, align = "center")
+```
+
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = params$subj %in% c("Angol", "Német")}
 div(plot_ly(data = fulldata, x = ~Olvasott_százalék, y = ~Hallott_százalék, z = ~Írás_százalék, type="scatter3d", mode="markers", color = ~ Nyelv_százalék, text = ~Név, width = 800, height = 800) %>% layout(
     scene = list(aspectmode = "cube", xaxis = list(range = c(0,100), title = 'Olvasott Szövegértés (x)'),yaxis = list(range = c(0, 100), title = 'Hallott Szövegértés (y)'), zaxis = list(range = c(0,100), title = 'Íráskészség (z)'))), align = "center")
@@ -460,8 +470,8 @@ div(plot_ly(data = fulldata, x = ~Olvasott_százalék, y = ~Hallott_százalék, 
 
 második_plot_data = as.data.frame(fulldata %>% select(Írásbeli_százalék, Szóbeli_százalék, Név))
 lin = lm(data = második_plot_data, Szóbeli_százalék ~ Írásbeli_százalék)
-második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = 'Írásbeli és szóbeli eredmények korrelációja', plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
-yaxis = list(title = "Szóbeli pontszám"))
+második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = paste('Írásbeli és szóbeli eredmények korrelációja', " (r = ",round(cor(második_plot_data$Írásbeli_százalék, második_plot_data$Szóbeli_százalék), 3), ")"), plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
+yaxis = list(title = "Szóbeli pontszám"), titlefont = list(size = 15))
 
 div(második_plot, align = "center")
 
@@ -715,8 +725,8 @@ div(plot_ly(data = fulldata, x = ~Szövegértés_százalék, y = ~Érvelés_Gyak
 
 második_plot_data = as.data.frame(fulldata %>% select(Írásbeli_százalék, Szóbeli_százalék, Név))
 lin = lm(data = második_plot_data, Szóbeli_százalék ~ Írásbeli_százalék)
-második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = 'Írásbeli és szóbeli eredmények korrelációja', plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
-yaxis = list(title = "Szóbeli pontszám"))
+második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = paste('Írásbeli és szóbeli eredmények korrelációja', " (r = ",round(cor(második_plot_data$Írásbeli_százalék, második_plot_data$Szóbeli_százalék), 3), ")"), plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
+yaxis = list(title = "Szóbeli pontszám"), titlefont = list(size = 15))
 
 div(második_plot, align = "center")
 
@@ -769,8 +779,8 @@ div(plot_ly(data = fulldata, x = ~Pénztár_százalék, y = ~Szöveges_százalé
 
 második_plot_data = as.data.frame(fulldata %>% select(Írásbeli_százalék, Szóbeli_százalék, Név))
 lin = lm(data = második_plot_data, Szóbeli_százalék ~ Írásbeli_százalék)
-második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = 'Írásbeli és szóbeli eredmények korrelációja', plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
-yaxis = list(title = "Szóbeli pontszám"))
+második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = paste('Írásbeli és szóbeli eredmények korrelációja', " (r = ",round(cor(második_plot_data$Írásbeli_százalék, második_plot_data$Szóbeli_százalék), 3), ")"), plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
+yaxis = list(title = "Szóbeli pontszám"), titlefont = list(size = 15))
 
 div(második_plot, align = "center")
 
@@ -824,8 +834,8 @@ div(plot_ly(data = fulldata, x = ~Teszt_százalék, y = ~Hosszú_százalék, z =
 
 
 
-második_plot = ggplotly(ggplot(fulldata, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = '\n\nÍrásbeli és szóbeli eredmények korrelációja', plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
-yaxis = list(title = "Szóbeli pontszám"))
+második_plot = ggplotly(ggplot(fulldata, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = paste('Írásbeli és szóbeli eredmények korrelációja', " (r = ",round(cor(fulldata$Írásbeli_százalék, fulldata$Szóbeli_százalék), 3), ")"), plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
+yaxis = list(title = "Szóbeli pontszám"), titlefont = list(size = 15))
 
 div(második_plot, align = "center")
 
@@ -962,11 +972,11 @@ A`r ifelse(length(levels(fulldata$Osztály))>2, "z egyutas varianciaanalízis", 
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Osztály)) > 2 & as.numeric(p_val) < 0.05}
 
-TIPS_pair_osztaly = c("Az első vizsgált csoport", "A második vizsgált csoport", "Az első csoport mintaelemszáma", "A második csoport mintaelemszáma", "t-statisztika, a két csoport átlaga közötti különbségnek a két csoport varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
+TIPS_pair_osztaly = c("Az első vizsgált osztály", "A második vizsgált osztály", "Az első osztály mintaelemszáma", "A második osztály mintaelemszáma", "t-statisztika, a két osztály átlaga közötti különbségnek a két osztály varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
 pairwise_osztaly = fulldata_long %>% pairwise_t_test(Százalék ~ Osztály, paired = FALSE, p.adjust.method = "holm")
 pairwise_osztaly = pairwise_osztaly[,2:ncol(pairwise_osztaly)]
 pairwise_osztaly = pairwise_osztaly[,1:ncol(pairwise_osztaly)-1]
-colnames(pairwise_osztaly) = text_spec(c("Csoport 1", "Csoport 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_pair_osztaly)
+colnames(pairwise_osztaly) = text_spec(c("Osztály 1", "Osztály 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_pair_osztaly)
 kable(pairwise_osztaly, "html", escape = F, digits = 3) %>% kable_styling("striped", position = "center")
 
 ```
@@ -992,7 +1002,7 @@ kable(tanar_desc, "html", escape = F, digits = 3) %>% kable_styling("striped", f
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) == 2}
-TIPS_tanar = c("Két osztály átlagának különbsége", "Első vizsgált osztály", "Második vizsgált osztály", "t-statisztika, matematikailag a két osztály átlagának különbsége osztva a két osztály szórásával", "p-érték, ha 0.05-nél kisebb, az eredmény szignifikánsnak tekinthető", "Szabadsági fok, a t-statisztika kritikus értékeinek megállapításához szükséges", "Konfidenciatartomány alsó határa", "Konfidenciatartomány felső határa", "A végzett t-próba típusa. Mivel jelen adatoknál a két csoport varianciájának azonossága nem garantálható, ez Welch-féle t-próba", "Alternatíva: Mivel nincs előzetes hipotézisünk az eltérés irányáról, kétoldalas tesztet alkalmazunk")  
+TIPS_tanar = c("Két tanár átlagának különbsége", "Első vizsgált tanár", "Második vizsgált tanár", "t-statisztika, matematikailag a két tanár átlagának különbsége osztva a két tanár szórásával", "p-érték, ha 0.05-nél kisebb, az eredmény szignifikánsnak tekinthető", "Szabadsági fok, a t-statisztika kritikus értékeinek megállapításához szükséges", "Konfidenciatartomány alsó határa", "Konfidenciatartomány felső határa", "A végzett t-próba típusa. Mivel jelen adatoknál a két csoport varianciájának azonossága nem garantálható, ez Welch-féle t-próba", "Alternatíva: Mivel nincs előzetes hipotézisünk az eltérés irányáról, kétoldalas tesztet alkalmazunk")  
 tanar_t = t.test(data = fulldata, Százalék_teljes ~ Tanár, var.equal = FALSE, conf.level = 0.95)
 tidyt_t = tidy(tanar_t)
 colnames(tidyt_t) = text_spec(c("Különbség",levels(fulldata$Tanár)[1],levels(fulldata$Tanár)[2], "t", "p", "df", "Konf.int.alsó", "konf.int.felső", "módszer", "Alt."), "html", tooltip = TIPS_tanar)
@@ -1026,11 +1036,11 @@ Hogy jobban megérthessük az eltérések hátterét, páronkénti t-próbákkal
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 2 & as.numeric(p_val_tanár) < 0.05}
 
-TIPS_pair_tanar = c("Az első vizsgált csoport", "A második vizsgált csoport", "Az első csoport mintaelemszáma", "A második csoport mintaelemszáma", "t-statisztika, a két csoport átlaga közötti különbségnek a két csoport varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
+TIPS_pair_tanar = c("Az első vizsgált tanár", "A második vizsgált tanár", "Az első tanár mintaelemszáma", "A második tanár mintaelemszáma", "t-statisztika, a két tanár átlaga közötti különbségnek a két tanár varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
 pairwise_tanar = fulldata_long %>% pairwise_t_test(Százalék ~ Tanár, paired = FALSE, p.adjust.method = "holm")
 pairwise_tanar = pairwise_tanar[,2:ncol(pairwise_tanar)]
 pairwise_tanar = pairwise_tanar[,1:ncol(pairwise_tanar)-1]
-colnames(pairwise_tanar) = text_spec(c("Csoport 1", "Csoport 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_pair_tanar)
+colnames(pairwise_tanar) = text_spec(c("Tanár 1", "Tanár 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_pair_tanar)
 kable(pairwise_tanar, "html", escape = F, digits = 3) %>% kable_styling("striped", position = "center")
 
 ```
@@ -1123,12 +1133,12 @@ Ebben a rövid összefoglalóban statisztikai szemmel vizsgáltuk meg a `r param
 
 ## Függelék: az összes tanuló eredményei
 
-Alább elérhető a vizsgán résztvevő minden tanuló
+Alább elérhető a vizsgán résztvevő minden tanuló eredménye táblázatos formában. A helytakarékosság miatt a táblázatnak egyidejűleg csak egy része jelenik meg, a jobb alsó sarokban található gombokkal lapozhatunk, az oszlopok tetején lévő szűrőkkel pedig szűrhetjük a megjeleníteni kívánt tanulókat. Névre kereséshez vagy a táblázat feletti 'Search' mezőt, vagy a 'Név' oszlop feletti mezőt használjuk, utóbbi esetében a beírt szöveg nem mindig jelenik meg a keresőmezőben.
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE}
 DTdata = fulldata %>% select(Név, Nem, ifelse(length(levels(fulldata$Tanár)) > 1, "Tanár", 0), ifelse(length(levels(fulldata$Osztály)) > 1, "Osztály", 0), ends_with("százalék"), Szóbeli, Százalék_teljes) %>% mutate_if(is.numeric, round, 3)
 
-datatable(DTdata, rownames = FALSE, filter = "top")
+datatable(DTdata, rownames = FALSE, filter = "top", colnames = str_replace_all(colnames(DTdata), "_", " "))
 ```
 
 
