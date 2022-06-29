@@ -6,7 +6,7 @@ date: "`r Sys.Date()`"
 output:
   html_document:
     toc: true
-    toc_float: true
+    toc_float: false
     toc_depth: 4
     df_print: tibble
   pdf_document: default
@@ -17,7 +17,7 @@ params:
   centrum: BGSZC
   school: Vásárhelyi Pál Technikum
   level: közép
-  subj: Turisztika
+  subj: Angol
 ---
 
 ```{r setup, include=FALSE}
@@ -952,7 +952,7 @@ kable(tidy, "html", escape = F, digits = 3) %>% kable_styling("striped")
 } else if (length(levels(fulldata$Osztály)) == 2) {
 
 TIPS_oszt_t = c("Két osztály átlagának különbsége", "Első vizsgált osztály", "Második vizsgált osztály", "t-statisztika, matematikailag a két osztály átlagának különbsége osztva a két osztály szórásával", "p-érték, ha 0.05-nél kisebb, az eredmény szignifikánsnak tekinthető", "Szabadsági fok, a t-statisztika kritikus értékeinek megállapításához szükséges", "Konfidenciatartomány alsó határa", "Konfidenciatartomány felső határa", "A végzett t-próba típusa. Mivel jelen adatoknál a két csoport varianciájának azonossága nem garantálható, ez Welch-féle t-próba", "Alternatíva: Mivel nincs előzetes hipotézisünk az eltérés irányáról, kétoldalas tesztet alkalmazunk")    
-osztály_t = t.test(data = fulldata, Százalék_teljes ~ Osztály, var.equal = FALSE, conf.level = 0.95)
+osztály_t = t.test(data = fulldata, Százalék_teljes ~ Osztály, pool.sd = FALSE, var.equal = FALSE, conf.level = 0.95)
 tidy = tidy(osztály_t)
 p_val = tidy[5]
 colnames(tidy) = text_spec(c("Különbség",levels(fulldata$Osztály)[1],levels(fulldata$Osztály)[2], "t", "p", "df", "Konf.int.alsó", "Konf.int.felső", "módszer", "Alt."), "html", tooltip = TIPS_oszt_t)
@@ -972,11 +972,10 @@ A`r ifelse(length(levels(fulldata$Osztály))>2, "z egyutas varianciaanalízis", 
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Osztály)) > 2 & as.numeric(p_val) < 0.05}
 
-TIPS_pair_osztaly = c("Az első vizsgált osztály", "A második vizsgált osztály", "Az első osztály mintaelemszáma", "A második osztály mintaelemszáma", "t-statisztika, a két osztály átlaga közötti különbségnek a két osztály varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
-pairwise_osztaly = fulldata_long %>% pairwise_t_test(Százalék ~ Osztály, paired = FALSE, p.adjust.method = "holm")
+TIPS_pair_osztaly = c("Az első vizsgált osztály", "A második vizsgált osztály", "Az első osztály mintaelemszáma", "A második osztály mintaelemszáma", "t-statisztika, a két osztály átlaga közötti különbségnek a két osztály varianciájával való hányadosa", "Szabadsági fok, a t-eloszlás kritikus értékeinek megállapításához szükséges", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték", "korrigált p-érték szignifikanciakódja")
+pairwise_osztaly = fulldata %>% pairwise_t_test(Százalék_teljes ~ Osztály, pool.sd = FALSE, var.equal = FALSE, paired = FALSE, p.adjust.method = "holm")
 pairwise_osztaly = pairwise_osztaly[,2:ncol(pairwise_osztaly)]
-pairwise_osztaly = pairwise_osztaly[,1:ncol(pairwise_osztaly)-1]
-colnames(pairwise_osztaly) = text_spec(c("Osztály 1", "Osztály 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_pair_osztaly)
+colnames(pairwise_osztaly) = text_spec(c("Osztály 1", "Osztály 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p.adj", "Szig. kód"), "html", tooltip = TIPS_pair_osztaly)
 kable(pairwise_osztaly, "html", escape = F, digits = 3) %>% kable_styling("striped", position = "center")
 
 ```
@@ -1003,7 +1002,7 @@ kable(tanar_desc, "html", escape = F, digits = 3) %>% kable_styling("striped", f
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) == 2}
 TIPS_tanar = c("Két tanár átlagának különbsége", "Első vizsgált tanár", "Második vizsgált tanár", "t-statisztika, matematikailag a két tanár átlagának különbsége osztva a két tanár szórásával", "p-érték, ha 0.05-nél kisebb, az eredmény szignifikánsnak tekinthető", "Szabadsági fok, a t-statisztika kritikus értékeinek megállapításához szükséges", "Konfidenciatartomány alsó határa", "Konfidenciatartomány felső határa", "A végzett t-próba típusa. Mivel jelen adatoknál a két csoport varianciájának azonossága nem garantálható, ez Welch-féle t-próba", "Alternatíva: Mivel nincs előzetes hipotézisünk az eltérés irányáról, kétoldalas tesztet alkalmazunk")  
-tanar_t = t.test(data = fulldata, Százalék_teljes ~ Tanár, var.equal = FALSE, conf.level = 0.95)
+tanar_t = t.test(data = fulldata, Százalék_teljes ~ Tanár, var.equal = FALSE, pool.sd = FALSE,  conf.level = 0.95)
 tidyt_t = tidy(tanar_t)
 colnames(tidyt_t) = text_spec(c("Különbség",levels(fulldata$Tanár)[1],levels(fulldata$Tanár)[2], "t", "p", "df", "Konf.int.alsó", "konf.int.felső", "módszer", "Alt."), "html", tooltip = TIPS_tanar)
 tidyt_t[9] = "Welch kétmintás t-próba"
@@ -1036,11 +1035,10 @@ Hogy jobban megérthessük az eltérések hátterét, páronkénti t-próbákkal
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 2 & as.numeric(p_val_tanár) < 0.05}
 
-TIPS_pair_tanar = c("Az első vizsgált tanár", "A második vizsgált tanár", "Az első tanár mintaelemszáma", "A második tanár mintaelemszáma", "t-statisztika, a két tanár átlaga közötti különbségnek a két tanár varianciájával való hányadosa", "t-statisztika szabadsági foka", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték")
-pairwise_tanar = fulldata_long %>% pairwise_t_test(Százalék ~ Tanár, paired = FALSE, p.adjust.method = "holm")
+TIPS_pair_tanar = c("Az első vizsgált osztály", "A második vizsgált osztály", "Az első osztály mintaelemszáma", "A második osztály mintaelemszáma", "t-statisztika, a két osztály átlaga közötti különbségnek a két osztály varianciájával való hányadosa", "Szabadsági fok, a t-eloszlás kritikus értékeinek megállapításához szükséges", "p-érték, ha 0.05-nél kisebb, az eredmény statisztikailag szignifikánsnak tekinthető", "Korrigált p-érték", "korrigált p-érték szignifikanciakódja")
+pairwise_tanar = fulldata_long %>% pairwise_t_test(Százalék ~ Tanár, paired = FALSE, pool.sd = FALSE, p.adjust.method = "holm")
 pairwise_tanar = pairwise_tanar[,2:ncol(pairwise_tanar)]
-pairwise_tanar = pairwise_tanar[,1:ncol(pairwise_tanar)-1]
-colnames(pairwise_tanar) = text_spec(c("Tanár 1", "Tanár 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p(korr)"), "html", tooltip = TIPS_pair_tanar)
+colnames(pairwise_tanar) = text_spec(c("Osztály 1", "Osztály 2", "n1", "n2", "Tesztstatisztika", "df", "p", "p.adj", "Szig. kód"), "html", tooltip = TIPS_pair_tanar)
 kable(pairwise_tanar, "html", escape = F, digits = 3) %>% kable_styling("striped", position = "center")
 
 ```
@@ -1071,7 +1069,7 @@ Hogy pontosabb képet kaphassunk a nemek közt esetlegesen mutatkozó eltérése
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Nem)) > 1}
 TIPS_nem = c("Nemek átlagának különbsége", "Első vizsgált csoport", "Második vizsgált csoport", "t-statisztika, matematikailag a két osztály átlagának különbsége osztva a két osztály szórásával", "p-érték, ha 0.05-nél kisebb, az eredmény szignifikánsnak tekinthető", "Szabadsági fok, a t-statisztika kritikus értékeinek megállapításához szükséges", "Konfidenciatartomány alsó határa", "Konfidenciatartomány felső határa", "A végzett t-próba típusa. Mivel jelen adatoknál a két csoport varianciájának azonossága nem garantálható, ez Welch-féle t-próba", "Alternatíva: Mivel nincs előzetes hipotézisünk az eltérés irányáról, kétoldalas tesztet alkalmazunk")  
-nem_t = t.test(data = fulldata, Százalék_teljes ~ Nem, var.equal = FALSE, conf.level = 0.95)
+nem_t = t.test(data = fulldata, Százalék_teljes ~ Nem, var.equal = FALSE, pool.sd = FALSE, conf.level = 0.95)
 tidyt_n = tidy(nem_t)
 colnames(tidyt_n) = text_spec(c("Különbség",levels(fulldata$Nem)[1],levels(fulldata$Nem)[2], "t", "p", "df", "Konf.int.alsó", "Konf.int.felső", "módszer", "Alt."), "html", tooltip = TIPS_nem)
 tidyt_n[9] = "Welch kétmintás t-próba"
@@ -1136,9 +1134,9 @@ Ebben a rövid összefoglalóban statisztikai szemmel vizsgáltuk meg a `r param
 Alább elérhető a vizsgán résztvevő minden tanuló eredménye táblázatos formában. A helytakarékosság miatt a táblázatnak egyidejűleg csak egy része jelenik meg, a jobb alsó sarokban található gombokkal lapozhatunk, az oszlopok tetején lévő szűrőkkel pedig szűrhetjük a megjeleníteni kívánt tanulókat. Névre kereséshez vagy a táblázat feletti 'Search' mezőt, vagy a 'Név' oszlop feletti mezőt használjuk, utóbbi esetében a beírt szöveg nem mindig jelenik meg a keresőmezőben.
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE}
-DTdata = fulldata %>% select(Név, Nem, ifelse(length(levels(fulldata$Tanár)) > 1, "Tanár", 0), ifelse(length(levels(fulldata$Osztály)) > 1, "Osztály", 0), ends_with("százalék"), Szóbeli, Százalék_teljes) %>% mutate_if(is.numeric, round, 3)
+DTdata = fulldata %>% select(Név, Nem, ifelse(length(levels(fulldata$Tanár)) > 1, "Tanár", 0), ifelse(length(levels(fulldata$Osztály)) > 1, "Osztály", 0), ends_with("százalék"), Szóbeli, Százalék_teljes) %>% mutate_if(is.numeric, round, 2)
 
-datatable(DTdata, rownames = FALSE, filter = "top", colnames = str_replace_all(colnames(DTdata), "_", " "))
+datatable(DTdata, rownames = FALSE, filter = "top", colnames = str_replace_all(colnames(DTdata), "_", " "), options = list(serverSide = FALSE))
 ```
 
 
