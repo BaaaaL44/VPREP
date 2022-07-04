@@ -17,7 +17,7 @@ params:
   centrum: BGSZC
   school: Vásárhelyi Pál Technikum
   level: közép
-  subj: Angol
+  subj: Matematika
 ---
 
 ```{r setup, include=FALSE}
@@ -66,7 +66,7 @@ library(stringr)
 if (params$subj %in% c("Angol", "Német")){
 
 fulldata = read_excel('angol2.xlsx')
-fulldata = fulldata %>% mutate(Olvasott_százalék = (Olvasott/33)*100, Hallott_százalék = (Hallott/33)*100, Írás_százalék = (Írás/33)*100, Nyelv_százalék = (Nyelv/18)*100, Százalék_teljes = (Össz/150*100), Írásbeli_százalék = (Írásbeli/117)*100, Szóbeli_százalék = (Szóbeli/33)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata = fulldata %>% mutate(Olvasott_százalék = (Olvasott/33)*100, Hallott_százalék = (Hallott/33)*100, Írás_százalék = (Írás/33)*100, Nyelv_százalék = (Nyelv/18)*100, Százalék_teljes = (Össz/150*100), Írásbeli_százalék = (Írásbeli/117)*100, Szóbeli_százalék = (Szóbeli/33)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"),Jegy_raw = case_when(Százalék_teljes < 25 ~ 1, Százalék_teljes >= 25 & Százalék_teljes < 40 ~ 2, Százalék_teljes >= 40 & Százalék_teljes < 60 ~ 3, Százalék_teljes >= 60 & Százalék_teljes < 80 ~ 4, Százalék_teljes >= 80 ~ 5))
 fulldata$Osztály = as.factor(fulldata$Osztály)
 fulldata$Nem = as.factor(fulldata$Nem)
 fulldata$Tanár = as.factor(fulldata$Tanár)
@@ -77,7 +77,7 @@ fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "K
 if (params$subj == "Logisztika"){
   
 fulldata = read_excel('logisztika.xlsx')
-fulldata = fulldata %>% mutate(Teszt_százalék = (Teszt/40)*100, Hosszú_százalék = (Hosszú/60)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 & Szóbeli_százalék >= 12 ~ "Írásbelin átment" ), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata = fulldata %>% mutate(Teszt_százalék = (Teszt/40)*100, Hosszú_százalék = (Hosszú/60)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 & Szóbeli_százalék >= 12 ~ "Írásbelin átment" ), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"), Jegy_raw = case_when(Százalék_teljes < 25 ~ 1, Százalék_teljes >= 25 & Százalék_teljes < 40 ~ 2, Százalék_teljes >= 40 & Százalék_teljes < 60 ~ 3, Százalék_teljes >= 60 & Százalék_teljes < 80 ~ 4, Százalék_teljes >= 80 ~ 5))
 fulldata$Osztály = as.factor(fulldata$Osztály)
 fulldata$Nem = as.factor(fulldata$Nem)
 fulldata$Tanár = as.factor(fulldata$Tanár)
@@ -88,7 +88,7 @@ fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "K
 if (params$subj == "Történelem"){
   
 fulldata = read_excel('történelem.xlsx')
-fulldata = fulldata %>% mutate(Teszt_százalék = (Teszt/50)*100, Hosszú_százalék = (Hosszú/50)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata = fulldata %>% mutate(Teszt_százalék = (Teszt/50)*100, Hosszú_százalék = (Hosszú/50)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"),Jegy_raw = case_when(Százalék_teljes < 25 ~ 1, Százalék_teljes >= 25 & Százalék_teljes < 40 ~ 2, Százalék_teljes >= 40 & Százalék_teljes < 60 ~ 3, Százalék_teljes >= 60 & Százalék_teljes < 80 ~ 4, Százalék_teljes >= 80 ~ 5))
 fulldata$Osztály = as.factor(fulldata$Osztály)
 fulldata$Nem = as.factor(fulldata$Nem)
 fulldata$Tanár = as.factor(fulldata$Tanár)
@@ -100,7 +100,7 @@ if (params$subj == "Matematika"){
   
 fulldata = read_excel('matek.xlsx')
 fulldata = fulldata %>% mutate(Szóbelizett = as.numeric(!is.na(Szóbeli)))
-fulldata = fulldata %>% mutate(Rövid_százalék = (Rövid/30)*100, Hosszú_A_százalék = (Hosszú_A/36)*100, Hosszú_B_százalék = (Hosszú_B/34)*100, Írásbeli_százalék = (Írásbeli/100)*100, Szóbeli_százalék = (Szóbeli/50)*100, Százalék_teljes = ifelse(Szóbelizett == 1, (Össz/150)*100, (Össz/100)*100), Státusz = case_when(Írásbeli_százalék < 12 | (!is.na(Szóbeli) & Szóbeli_százalék < 12) ~"Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 25 ~ "Kettesért szóbelizik", Írásbeli >= 25 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata = fulldata %>% mutate(Rövid_százalék = (Rövid/30)*100, Hosszú_A_százalék = (Hosszú_A/36)*100, Hosszú_B_százalék = (Hosszú_B/34)*100, Írásbeli_százalék = (Írásbeli/100)*100, Szóbeli_százalék = (Szóbeli/50)*100, Százalék_teljes = ifelse(Szóbelizett == 1, (Össz/150)*100, (Össz/100)*100), Státusz = case_when(Írásbeli_százalék < 12 | (!is.na(Szóbeli) & Szóbeli_százalék < 12) ~"Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 25 ~ "Kettesért szóbelizik", Írásbeli >= 25 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"),Jegy_raw = case_when(Százalék_teljes < 25 ~ 1, Százalék_teljes >= 25 & Százalék_teljes < 40 ~ 2, Százalék_teljes >= 40 & Százalék_teljes < 60 ~ 3, Százalék_teljes >= 60 & Százalék_teljes < 80 ~ 4, Százalék_teljes >= 80 ~ 5))
 fulldata$Osztály = as.factor(fulldata$Osztály)
 fulldata$Nem = as.factor(fulldata$Nem)
 fulldata$Tanár = as.factor(fulldata$Tanár)
@@ -110,7 +110,7 @@ fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "K
 
 if (params$subj == "Turisztika"){
 fulldata = read_excel('Turisztika.xlsx')
-fulldata = fulldata %>% mutate(Turizmusföldrajz_százalék = (Turizmusföldrajz/25)*100, Kultúrtörténet_százalék = (Kultúrtörténet/25)*100, Vendégfogadás_százalék = (Vendégfogadás/20)*100, Protokoll_százalék = (Protokoll/10)*100, Turizmus_rendszere_százalék = (Turizmus_rendszere/15)*100, Marketing_százalék = (Marketing/5)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata = fulldata %>% mutate(Turizmusföldrajz_százalék = (Turizmusföldrajz/25)*100, Kultúrtörténet_százalék = (Kultúrtörténet/25)*100, Vendégfogadás_százalék = (Vendégfogadás/20)*100, Protokoll_százalék = (Protokoll/10)*100, Turizmus_rendszere_százalék = (Turizmus_rendszere/15)*100, Marketing_százalék = (Marketing/5)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"),Jegy_raw = case_when(Százalék_teljes < 25 ~ 1, Százalék_teljes >= 25 & Százalék_teljes < 40 ~ 2, Százalék_teljes >= 40 & Százalék_teljes < 60 ~ 3, Százalék_teljes >= 60 & Százalék_teljes < 80 ~ 4, Százalék_teljes >= 80 ~ 5))
 fulldata$Osztály = as.factor(fulldata$Osztály)
 fulldata$Nem = as.factor(fulldata$Nem)
 fulldata$Tanár = as.factor(fulldata$Tanár)
@@ -120,7 +120,7 @@ fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "K
 
 if (params$subj == "Magyar"){
 fulldata = read_excel('magyar.xlsx')
-fulldata = fulldata %>% mutate(Szövegértés_százalék = (Szövegértés/40)*100, Érvelés_Gyak_százalék = (Érvelés_Gyak/10)*100, Műértelmezés_százalék = (Műértelmezés/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Szóbeli_százalék = (Szóbeli/50)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata = fulldata %>% mutate(Szövegértés_százalék = (Szövegértés/40)*100, Érvelés_Gyak_százalék = (Érvelés_Gyak/10)*100, Műértelmezés_százalék = (Műértelmezés/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Szóbeli_százalék = (Szóbeli/50)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"),Jegy_raw = case_when(Százalék_teljes < 25 ~ 1, Százalék_teljes >= 25 & Százalék_teljes < 40 ~ 2, Százalék_teljes >= 40 & Százalék_teljes < 60 ~ 3, Százalék_teljes >= 60 & Százalék_teljes < 80 ~ 4, Százalék_teljes >= 80 ~ 5))
 fulldata$Osztály = as.factor(fulldata$Osztály)
 fulldata$Nem = as.factor(fulldata$Nem)
 fulldata$Tanár = as.factor(fulldata$Tanár)
@@ -130,7 +130,7 @@ fulldata$Jegy = factor(fulldata$Jegy, levels = c("Elégtelen", "Elégséges", "K
 
 if (params$subj == "Kereskedelem"){
 fulldata = read_excel('Kereskedelem.xlsx')
-fulldata = fulldata %>% mutate(Pénztár_százalék = (Pénztár/25)*100, Szöveges_százalék = (Szöveges/30)*100, Számítás_százalék = (Számítás/45)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata = fulldata %>% mutate(Pénztár_százalék = (Pénztár/25)*100, Szöveges_százalék = (Szöveges/30)*100, Számítás_százalék = (Számítás/45)*100, Szóbeli_százalék = (Szóbeli/50)*100, Írásbeli_százalék = (Írásbeli/100)*100, Százalék_teljes = (Össz/150)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"),Jegy_raw = case_when(Százalék_teljes < 25 ~ 1, Százalék_teljes >= 25 & Százalék_teljes < 40 ~ 2, Százalék_teljes >= 40 & Százalék_teljes < 60 ~ 3, Százalék_teljes >= 60 & Százalék_teljes < 80 ~ 4, Százalék_teljes >= 80 ~ 5))
 fulldata$Osztály = as.factor(fulldata$Osztály)
 fulldata$Nem = as.factor(fulldata$Nem)
 fulldata$Tanár = as.factor(fulldata$Tanár)
@@ -241,7 +241,7 @@ jegy_gyak
 ```
 
 ```{asis, echo = TRUE}
- A vizsgán `r jegy_raw_freq[1,2]` tanuló szerzett elégtelen, `r jegy_raw_freq[2,2]` tanuló elégséges, `r jegy_raw_freq[3,2]` tanuló közepes, `r jegy_raw_freq[4,2]` jó, `r jegy_raw_freq[5,2]` pedig jeles osztályzatot
+ A vizsgán `r jegy_raw_freq[1,2]` tanuló szerzett elégtelen, `r jegy_raw_freq[2,2]` tanuló elégséges, `r jegy_raw_freq[3,2]` tanuló közepes, `r jegy_raw_freq[4,2]` jó, `r jegy_raw_freq[5,2]` pedig jeles osztályzatot. Az érettségi vizsga jegyben számolt eredményének átlaga `r round(mean(fulldata$Jegy_raw), 2)`
 ```
 
 ### Leíró statisztikai adatok (középértékek, szórási mutatók)
@@ -299,10 +299,10 @@ kable(rész_desc, "html", escape = F, digits = 3) %>% kable_styling("striped", f
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = ncol(fulldata %>% select(ends_with("százalék"), -Írásbeli_százalék)) > 1}
 if(params$subj == "Turisztika"){
-box_rep = ggplot(data = fulldata_long, aes(x = str_replace_all(Feladat, "_", " "), y = Százalék, fill = Feladat)) + geom_boxplot(lwd = 1) + coord_flip()
+box_rep = ggplot(data = fulldata_long, aes(x = str_replace_all(Feladat, "_", " "), y = Százalék, fill = Feladat)) + geom_boxplot(lwd = 1) + coord_flip() + scale_fill_brewer(palette = "BrBG") + theme_dark()
 div(ggplotly(box_rep), align = "center")
 } else{
-box_rep = ggplot(data = fulldata_long, aes(x = str_replace_all(Feladat, "_", " "), y = Százalék, fill = Feladat)) + geom_boxplot(lwd = 1) + xlab("Feladat")  
+box_rep = ggplot(data = fulldata_long, aes(x = str_replace_all(Feladat, "_", " "), y = Százalék, fill = Feladat)) + geom_boxplot(lwd = 1) + xlab("Feladat") + scale_fill_brewer(palette = "BrBG") + theme_dark()
 div(ggplotly(box_rep), align = "center")  
 }
 ```
@@ -897,7 +897,7 @@ A következőkben azt fogjuk megvizsgálni, milyen eltérések vannak az éretts
 
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Osztály)) > 1}
-box_osztály = ggplot(data = fulldata, aes(x = Osztály, y = Százalék_teljes, fill = Osztály)) + geom_boxplot(lwd = 1)
+box_osztály = ggplot(data = fulldata, aes(x = Osztály, y = Százalék_teljes, fill = Osztály)) + geom_boxplot(lwd = 1) + scale_fill_brewer(palette = "BrBG") + theme_dark()
 div(ggplotly(box_osztály), align = "center")
 ```
 
@@ -912,7 +912,7 @@ kable(osztaly_desc,"html", escape = F,  digits = 3) %>% kable_styling("striped",
 Az eredmények áttekintéséhez célszerű megvizsgálni azt is, milyen valószínűséggel érnek el magas pontszámot a tanulók. A diákok eredménye jellemzően bimodális eloszlást mutat, ez pedig jobban szembeötlik, ha egy sűrűségfüggvényen ábrázoljuk az egyes pontszámok előfordulásának valószínűségét. A sűrűségfüggvény értelmezése a hisztogramhoz hasonló, azonban kevésbé érzékeny a szélsőértékekre:
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, EVAL = TRUE}
-dens1 = ggplot(data = fulldata, aes(x = Százalék_teljes)) + geom_density(fill = "grey", alpha = 0.7) + labs(x = "Vizsgán elért százalék", y = "Sűrűség")
+dens1 = ggplot(data = fulldata, aes(x = Százalék_teljes)) + geom_density(fill = "grey", alpha = 0.7) + labs(x = "Vizsgán elért százalék", y = "Sűrűség") + scale_fill_brewer(palette = "BrBG")
 div(ggplotly(dens1), align = "center")
 ```
 
@@ -924,7 +924,7 @@ div(ggplotly(dens1), align = "center")
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = "11.A" %in% levels(fulldata$Osztály) | "11.B" %in% levels(fulldata$Osztály) | "11.C" %in% levels(fulldata$Osztály) | "11.D" %in% levels(fulldata$Osztály)}
 fulldata_split = fulldata %>% mutate(Évfolyam = as.character(grepl("11", Osztály)))
 fulldata_split$Évfolyam = as.factor(recode(fulldata_split$Évfolyam, 'TRUE'  = "11", 'FALSE' = "12"))
-split_dens = ggplot(data = fulldata_split, aes(x = Százalék_teljes, fill = Évfolyam)) + geom_density(alpha = 0.5) + labs(fill = "Évfolyam") + labs(x = "Vizsgán elért százalék", y = "Sűrűség") + theme(legend.title = element_text("Évfolyam"))
+split_dens = ggplot(data = fulldata_split, aes(x = Százalék_teljes, fill = Évfolyam)) + geom_density(alpha = 0.5) + labs(fill = "Évfolyam") + labs(x = "Vizsgán elért százalék", y = "Sűrűség") + theme(legend.title = element_text("Évfolyam")) + scale_fill_manual(values = c("#117733", "darkorange3"))
 
 div(ggplotly(split_dens), align = "center")
 ```
@@ -989,7 +989,7 @@ A továbbiakban röviden megvizsgáljuk azt is, van-e különbség a tanulók te
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Tanár)) > 1}
-box_tanar = ggplot(data = fulldata, aes(x = Tanár, y = Százalék_teljes, fill = Tanár)) + geom_boxplot(lwd = 1) + labs(x = "Tanár", y = "Írásbeli százalék")
+box_tanar = ggplot(data = fulldata, aes(x = Tanár, y = Százalék_teljes, fill = Tanár)) + geom_boxplot(lwd = 1) + labs(x = "Tanár", y = "Írásbeli százalék") + scale_fill_brewer(palette = "BrBG") + theme_dark()
 div(ggplotly(box_tanar), align= "center")
 ```
 
@@ -1052,7 +1052,7 @@ Hogy teljes képet kaphassunk a tanulók teljesítményét potenciálisan befoly
 ```
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE, eval = length(levels(fulldata$Nem)) > 1}
-box3 = ggplot(data = fulldata, aes(x = Nem, y = Százalék_teljes, fill = Nem)) + geom_boxplot(lwd = 1) + labs(x = "Nem", y = "Elért százalék")
+box3 = ggplot(data = fulldata, aes(x = Nem, y = Százalék_teljes, fill = Nem)) + geom_boxplot(lwd = 1) + labs(x = "Nem", y = "Elért százalék")+ scale_fill_brewer(palette = "BrBG") + theme_dark()
 div(ggplotly(box3), align = "center")
 ```
 
