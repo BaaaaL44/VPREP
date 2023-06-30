@@ -473,8 +473,8 @@ div(p, align = "center")
 
 második_plot_data = as.data.frame(fulldata %>% select(Írásbeli_százalék, Szóbeli_százalék, Név))
 lin = lm(data = második_plot_data, Szóbeli_százalék ~ Írásbeli_százalék)
-második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = paste('Írásbeli és szóbeli eredmények korrelációja', " (r = ",round(cor(második_plot_data$Írásbeli_százalék, második_plot_data$Szóbeli_százalék), 3), ")"), plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli pontszám"), 
-yaxis = list(title = "Szóbeli pontszám"), titlefont = list(size = 15))
+második_plot = ggplotly(ggplot(második_plot_data, aes(x = Írásbeli_százalék, y = Szóbeli_százalék, label = Név)) + geom_point() + geom_smooth(method = "lm")) %>% layout(title = paste('Írásbeli és szóbeli eredmények korrelációja', " (r = ",round(cor(második_plot_data$Írásbeli_százalék, második_plot_data$Szóbeli_százalék), 3), ")"), plot_bgcolor = "#e5ecf6", xaxis = list(title = "Írásbeli százalék"), 
+yaxis = list(title = "Szóbeli százalék"), titlefont = list(size = 15))
 
 div(második_plot, align = "center")
 
