@@ -63,7 +63,7 @@ library(stringr)
 if (params$subj %in% c("Angol", "Német")){
 
 fulldata = read_excel('angol_2023_full.xlsx')
-fulldata = fulldata %>% mutate(Olvasott_százalék = (Olvasott/33)*100, Hallott_százalék = (Hallott/33)*100, Írás_százalék = (Írás/33)*100, Nyelv_százalék = (Nyelv/18)*100, Százalék_teljes = (Össz/150*100), Írásbeli_százalék = (Írásbeli/117)*100, Szóbeli_százalék = (Szóbeli/33)*100, Státusz = case_when(Írásbeli_százalék < 12 | Szóbeli_százalék < 12 ~ "Érvénytelen", Írásbeli_százalék >= 12 & Írásbeli < 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 25 ~ "Elégtelen", Százalék_teljes >= 25 & Százalék_teljes < 40 ~ "Elégséges", Százalék_teljes >= 40 & Százalék_teljes < 60 ~ "Közepes", Százalék_teljes >= 60 & Százalék_teljes < 80 ~ "Jó", Százalék_teljes >= 80 ~ "Jeles"))
+fulldata = fulldata %>% mutate(Olvasott_százalék = (Olvasott/33)*100, Hallott_százalék = (Hallott/33)*100, Írás_százalék = (Írás/33)*100, Nyelv_százalék = (Nyelv/18)*100, Százalék_teljes = (Össz/150*100), Írásbeli_százalék = (Írásbeli/117)*100, Szóbeli_százalék = (Szóbeli/33)*100, Státusz = case_when(Írásbeli_százalék <= 12.5 | Szóbeli_százalék < 12.5 ~ "Érvénytelen", Írásbeli_százalék >= 12.5 & Írásbeli <= 38 ~ "Kettesért szóbelizik", Írásbeli >= 38 ~ "Írásbelin átment"), Jegy = case_when(Százalék_teljes < 24.5 ~ "Elégtelen", Százalék_teljes >= 24.5 & Százalék_teljes < 39.5 ~ "Elégséges", Százalék_teljes >= 39.5 & Százalék_teljes < 59.5 ~ "Közepes", Százalék_teljes >= 59.5 & Százalék_teljes < 79.5 ~ "Jó", Százalék_teljes >= 79.5 ~ "Jeles"))
 fulldata$Osztály = as.factor(fulldata$Osztály)
 fulldata$Nem = as.factor(fulldata$Nem)
 fulldata$Tanár = as.factor(fulldata$Tanár)
@@ -1028,7 +1028,7 @@ p_val_tanár = 1
 ```
 
 ```{asis, echo = length(levels(fulldata$Tanár)) > 1}
-A`r ifelse(length(levels(fulldata$Tanár)) > 2, "z ismételt méréses varianciaanalízis", " független mintás t-próba")` eredménye `r ifelse(p_val_tanár > 0.05, "nem szignifikáns", "szignifikáns")` (p = `r as.numeric(p_val_tanár)`).
+A`r ifelse(length(levels(fulldata$Tanár)) > 2, "z egyutas varianciaanalízis", " független mintás t-próba")` eredménye `r ifelse(p_val_tanár > 0.05, "nem szignifikáns", "szignifikáns")` (p = `r as.numeric(p_val_tanár)`).
 ```
 
 ```{asis, echo = length(levels(fulldata$Tanár)) > 2 & as.numeric(p_val_tanár) < 0.05}
@@ -1136,7 +1136,7 @@ Ebben a rövid összefoglalóban statisztikai szemmel vizsgáltuk meg a `r param
 Alább elérhető a vizsgán résztvevő minden tanuló eredménye táblázatos formában. A helytakarékosság miatt a táblázatnak egyidejűleg csak egy része jelenik meg, a jobb alsó sarokban található gombokkal lapozhatunk, az oszlopok tetején lévő szűrőkkel pedig szűrhetjük a megjeleníteni kívánt tanulókat. Névre kereséshez vagy a táblázat feletti 'Search' mezőt, vagy a 'Név' oszlop feletti mezőt használjuk, utóbbi esetében a beírt szöveg nem mindig jelenik meg a keresőmezőben.
 
 ```{r warning = FALSE, message = FALSE, echo = FALSE}
-DTdata = fulldata %>% select(Név, Nem, ifelse(length(levels(fulldata$Tanár)) > 1, "Tanár", 0), ifelse(length(levels(fulldata$Osztály)) > 1, "Osztály", 0), ends_with("százalék"), Szóbeli, Százalék_teljes) %>% mutate_if(is.numeric, round, 2)
+DTdata = fulldata %>% select(Név, Nem, ifelse(length(levels(fulldata$Tanár)) > 1, "Tanár", 0), ifelse(length(levels(fulldata$Osztály)) > 1, "Osztály", 0), ends_with("százalék"), Szóbeli, Százalék_teljes, Státusz, Jegy) %>% mutate_if(is.numeric, round, 2)
 
 datatable(DTdata, rownames = FALSE, filter = "top", colnames = str_replace_all(colnames(DTdata), "_", " "), options = list(serverSide = FALSE))
 ```
